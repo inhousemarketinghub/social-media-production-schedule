@@ -276,10 +276,13 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
 <div class="gate show" id="gate">
   <div class="card box">
     <h1>Social Media Production Schedule</h1>
-    <p>Sign in with your work email. We will send you a one-time login link.</p>
-    <div class="f"><input type="email" id="gEmail" placeholder="name@company.com" autocomplete="email"></div>
-    <button class="btn primary" id="gSend" style="width:100%;justify-content:center">Send login link</button>
+    <p>Sign in with the Google account that is on the access list.</p>
+    <button class="btn ink" id="gGoogle" style="width:100%;justify-content:center;gap:10px"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.5 13.3l7.9 6.1C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.6c-.5-1.5-.8-3-.8-4.6s.3-3.1.8-4.6l-7.9-6.1C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.7-2.1 15.6-5.7l-7.5-5.8c-2.1 1.4-4.8 2.3-8.1 2.3-6.3 0-11.7-4.1-13.6-9.9l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>Continue with Google</button>
     <div class="msg" id="gMsg"></div>
+    <details style="margin-top:14px"><summary class="hint" style="cursor:pointer">No Google? Use an email link instead</summary>
+      <div class="f" style="margin-top:10px"><input type="email" id="gEmail" placeholder="name@company.com" autocomplete="email"></div>
+      <button class="btn" id="gSend" style="width:100%;justify-content:center">Send login link</button>
+    </details>
   </div>
 </div>
 <div class="page">
@@ -302,8 +305,7 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
       </div>
     </div>
     <div class="card sub filters">
-      <div class="frow"><span class="flabel" title="Who does this task">Made by</span><div class="seg" id="fOwner"></div></div>
-      <div class="frow"><span class="flabel" title="Who produces the content. If any of design, shoot or edit is outsourced, the whole content (including its posting) is External">Production</span><div class="seg" id="fProd"></div></div>
+      <div class="frow"><span class="flabel" title="Who produces: only affects Designing and Editing tasks. Other stages always show.">Production</span><div class="seg" id="fOwner"></div></div>
       <div class="frow"><span class="flabel">Brand</span><div class="seg" id="fBrand"></div></div>
       <div class="frow"><span class="flabel">Type</span><div class="seg" id="fType"></div></div>
       <div class="frow"><span class="flabel">Status</span><div class="seg" id="fStatus"></div></div>
@@ -339,7 +341,7 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
     <div class="f" id="rowTitle"><label>Name</label><input id="tTitle" placeholder="e.g. Sofa fabric guide (applies to every stage of this content)"></div>
     <div class="f"><label>Brand</label><select id="tBrand"></select></div>
     <div class="f"><label>Stage</label><select id="tStage"></select></div>
-    <div class="f"><label>Owner</label><div class="radio" id="tOwner"><button data-v="personal">Personal</button><button data-v="outsource">Outsource</button></div></div>
+    <div class="f"><label>Done by</label><div class="radio" id="tOwner"><button data-v="personal">Self</button><button data-v="outsource">Outsource</button></div></div>
     <div class="f" id="rowWeek"><label>Week</label><div class="two"><input type="month" id="tMonth"><select id="tWeek"><option value="1">W1 (1 to 7)</option><option value="2">W2 (8 to 14)</option><option value="3">W3 (15 to 21)</option><option value="4">W4 (22 to end)</option></select></div></div>
     <div class="f" id="rowCycle"><label>Posting cycle</label><input type="month" id="tCycle" title="Which month this content is posted in."></div>
     <div class="f" id="rowTplWeek"><label>Week</label><select id="tWeek2"><option value="1">W1 (1 to 7)</option><option value="2">W2 (8 to 14)</option><option value="3">W3 (15 to 21)</option><option value="4">W4 (22 to end)</option></select></div>
@@ -424,6 +426,7 @@ const PALETTE={
 };
 const STAGE_COLOR={pre:'#E3B321',design:'#7B5EA7',shoot:'#BA4E33',edit:'#4A6010',post:'#2E8B74'};
 const GENERAL={id:'',name:'General',short:'',color:'sun'};
+const ALLB={id:'all',name:'All brands',short:'',color:'stone'};
 const DEFAULT_SETTINGS={
   brands:[{id:'dc',name:'Dream Crafter',short:'DC',color:'clay'},{id:'2990',name:"2990's",short:"2990's",color:'olive'}],
   workDays:5, subtitle:'1 Social Media Specialist | 2 Projects'
@@ -443,10 +446,11 @@ const WEEK_DAYS={1:'1 to 7',2:'8 to 14',3:'15 to 21',4:'22 to end'};
 function weekOfDate(d){return Math.min(4,Math.ceil(d.getDate()/7))}
 const now=new Date(); const CUR_YM=ymOf(now); const CUR_W=weekOfDate(now);
 function uid(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function brandOf(id){return state.settings.brands.find(b=>b.id===id)||(id===''?GENERAL:{id,name:id,short:id,color:'stone'})}
+function brandOf(id){if(id==='all')return ALLB;return state.settings.brands.find(b=>b.id===id)||(id===''?GENERAL:{id,name:id,short:id,color:'stone'})}
 function tone(b){const c=COLOR_MIGRATE[b.color]||b.color;const p=PALETTE[c]||PALETTE.stone;return `--cbg:${p.bg};--cfg:${p.fg};--cline:${p.line}`}
 function logoHtml(b,lg){
   if(!b||b.id==='')return '';
+  if(b.id==='all')return state.settings.brands.map(x=>logoHtml(x,lg)).join('');
   if(b.logo)return `<img class="logo ${lg?'lg':''}" src="${b.logo}" alt="${esc(b.short||b.name)}">`;
   const c=COLOR_MIGRATE[b.color]||b.color;const p=PALETTE[c]||PALETTE.stone;
   return `<span class="logo ini ${lg?'lg':''}" style="background:${p.fg}" title="${esc(b.name)}">${esc((b.short||b.name).replace(/[^A-Za-z0-9]/g,'').slice(0,2).toUpperCase())}</span>`;
@@ -466,29 +470,17 @@ $('#themeBtn').onclick=()=>{const t=document.documentElement.getAttribute('data-
 let state={tasks:{},settings:JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),template:{tasks:[]}};
 const WEEKS_WEEK_DEFAULT=[{dm:0,w:1},{dm:0,w:2},{dm:0,w:3},{dm:0,w:4}];
 const WEEKS_MATRIX_DEFAULT=[{dm:-1,w:4},{dm:0,w:1},{dm:0,w:2},{dm:0,w:3},{dm:0,w:4},{dm:1,w:1},{dm:1,w:2}];
-let ui={view:'schedule',sub:'week',tplSub:'week',capAxis:'stage',owner:'all',prod:'all',brand:'all',type:'all',status:'all',month:CUR_YM,weeksWeek:WEEKS_WEEK_DEFAULT.slice(),weeksMatrix:WEEKS_MATRIX_DEFAULT.slice()};
+let ui={view:'schedule',sub:'week',tplSub:'week',capAxis:'stage',owner:'all',brand:'all',type:'all',status:'all',month:CUR_YM,weeksWeek:WEEKS_WEEK_DEFAULT.slice(),weeksMatrix:WEEKS_MATRIX_DEFAULT.slice()};
 (function(){try{const r=localStorage.getItem('sm-ui');if(r){const o=JSON.parse(r);if(o.weeksWeek)ui.weeksWeek=o.weeksWeek;if(o.weeksMatrix)ui.weeksMatrix=o.weeksMatrix}}catch(e){}})();
 function saveUi(){try{localStorage.setItem('sm-ui',JSON.stringify({weeksWeek:ui.weeksWeek,weeksMatrix:ui.weeksMatrix}))}catch(e){}}
 let canWrite=true,mode='local';
 
 function loadLocal(){try{const r=localStorage.getItem(LS_KEY);if(r){const o=JSON.parse(r);if(o.tasks)state.tasks=o.tasks;if(o.settings)state.settings={...state.settings,...o.settings};if(o.template)state.template=o.template}}catch(e){}}
 function saveLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(state))}catch(e){}}
-/* owner is judged per content item (brand + item + posting cycle): if any production stage is outsourced, the whole content counts as outsource, including its posting */
-let prodMap={real:{},tpl:{}};
-function isTpl(t){return t.month==null||t.month==='tpl'}
-function contentKey(t){return (t.brand||'')+'|'+(t.item||'')+'|'+(isTpl(t)?(t.cycleNext?'n':'t'):(t.cycle||t.month))}
-function buildProdMap(){
-  const real={},tpl={};
-  allTasks().forEach(t=>{if(t.stage==='post')return;const k=contentKey(t);if(t.owner==='outsource')real[k]='outsource';else if(!real[k])real[k]='personal'});
-  (state.template.tasks||[]).forEach(t=>{if(t.stage==='post')return;const k=contentKey(t);if(t.owner==='outsource')tpl[k]='outsource';else if(!tpl[k])tpl[k]='personal'});
-  prodMap={real,tpl};
-}
-function prodOwner(t){const m=isTpl(t)?prodMap.tpl:prodMap.real;return m[contentKey(t)]||t.owner}
 function visible(t,ignoreDone){
   if(!ignoreDone&&ui.status==='open'&&t.done)return false;
-  if(ui.owner!=='all'&&t.owner!==ui.owner)return false;
-  if(ui.prod!=='all'&&(prodOwner(t)==='outsource'?'external':'inhouse')!==ui.prod)return false;
-  if(ui.brand!=='all'&&t.brand!==ui.brand)return false;
+  if(ui.owner!=='all'&&(t.stage==='design'||t.stage==='edit')&&t.owner!==ui.owner)return false;
+  if(ui.brand!=='all'&&t.brand!==ui.brand&&t.brand!=='all')return false;
   if(ui.type!=='all'&&itemType(t.item)!==ui.type)return false;
   return true;
 }
@@ -590,6 +582,11 @@ async function loadAll(){
     })
     .subscribe(status=>{if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')toast('Live sync lost. Reload the page.')});
 }
+$('#gGoogle').onclick=async()=>{
+  gateMsg('Opening Google...');
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname,queryParams:{prompt:'select_account'}}});
+  if(error)gateMsg('Could not start Google login: '+error.message,'err');
+};
 $('#gSend').onclick=async()=>{
   const email=$('#gEmail').value.trim().toLowerCase();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){gateMsg('Enter a valid email.','err');return}
@@ -609,13 +606,12 @@ function chipHtml(t,tpl){
   const cls='chip'+(t.owner==='outsource'?' out':'')+(t.done?' done':'');
   const days=t.days>0?`<span class="d">${t.days}d</span>`:'';
   const tip=`${esc(t.item)}${t.title?' · '+esc(t.title):''} (${esc(b.name)}) · ${esc(st.name)} · ${t.owner}${t.cycle?' · posted '+monthShort(t.cycle):''}${t.note?' · '+esc(t.note):''}`;
-  const ext=(prodOwner(t)==='outsource')?'<span class="ext" title="External content: produced by outsource">EXT</span>':'';
-  return `<button class="${cls}" draggable="${canWrite?'true':'false'}" data-id="${t.id}" ${tpl?'data-tpl="1"':''} title="${tip}"><span class="row1">${logoHtml(b)}${t.done?ICON.check:ICON[st.id]}<span class="lbl">${esc(t.item)}</span>${tpl?'':cycTag(t)}${ext}${days}</span>${t.title?`<span class="ttl">${esc(t.title)}</span>`:''}</button>`;
+  return `<button class="${cls}" draggable="${canWrite?'true':'false'}" data-id="${t.id}" ${tpl?'data-tpl="1"':''} title="${tip}"><span class="row1">${logoHtml(b)}${t.done?ICON.check:ICON[st.id]}<span class="lbl">${esc(t.item)}</span>${tpl?'':cycTag(t)}${days}</span>${t.title?`<span class="ttl">${esc(t.title)}</span>`:''}</button>`;
 }
 function rowHtml(t,tpl){
   const b=brandOf(t.brand);
   const cb=tpl?'':`<input type="checkbox" data-done="${t.id}" ${t.done?'checked':''} ${canWrite?'':'disabled'} aria-label="Mark done">`;
-  return `<div class="tcard ${t.owner==='outsource'?'out':''} ${t.done?'done':''}">${cb}${logoHtml(b)}<div class="body" data-id="${t.id}" ${tpl?'data-tpl="1"':''}><div class="t">${esc(t.item)}${b.short?` <span class="bs">${esc(b.short)}</span>`:''}${tpl?'':' '+cycTag(t)}${(prodOwner(t)==='outsource')?' <span class="ext" title="External content: produced by outsource">EXT</span>':''}</div>${t.title?`<div class="ttl">${esc(t.title)}</div>`:''}<div class="m">${t.owner==='outsource'?'Outsource':'Personal'}${t.days>0?' · '+t.days+'d':''}${t.note?' · '+esc(t.note):''}</div></div></div>`;
+  return `<div class="tcard ${t.owner==='outsource'?'out':''} ${t.done?'done':''}">${cb}${logoHtml(b)}<div class="body" data-id="${t.id}" ${tpl?'data-tpl="1"':''}><div class="t">${esc(t.item)}${b.short?` <span class="bs">${esc(b.short)}</span>`:''}${tpl?'':' '+cycTag(t)}</div>${t.title?`<div class="ttl">${esc(t.title)}</div>`:''}<div class="m">${t.owner==='outsource'?'Outsource':'Self'}${t.days>0?' · '+t.days+'d':''}${t.note?' · '+esc(t.note):''}</div></div></div>`;
 }
 function bindTasks(){
   document.querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>el.dataset.tpl?openTplTask(el.dataset.id):openTask(el.dataset.id));
@@ -641,7 +637,6 @@ function subsegHtml(id,items,cur){return `<div class="subseg" id="${id}">${items
 
 /* ================= main render ================= */
 function render(){
-  buildProdMap();
   $('#subtitle').textContent=state.settings.subtitle||'';
   renderFilters();
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.view===ui.view));
@@ -655,15 +650,14 @@ function seg(el,items,cur,key){
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>{ui[key]=b.dataset.v;render()});
 }
 function renderFilters(){
-  seg($('#fOwner'),[{v:'all',l:'All'},{v:'personal',l:'Personal'},{v:'outsource',l:'Outsource'}],ui.owner,'owner');
-  seg($('#fProd'),[{v:'all',l:'All'},{v:'inhouse',l:'In-house'},{v:'external',l:'External'}],ui.prod,'prod');
+  seg($('#fOwner'),[{v:'all',l:'All'},{v:'personal',l:'Self'},{v:'outsource',l:'Outsource'}],ui.owner,'owner');
   seg($('#fBrand'),[{v:'all',l:'All'},...state.settings.brands.map(b=>({v:b.id,l:b.name,logo:logoHtml(b)}))],ui.brand,'brand');
   seg($('#fType'),[{v:'all',l:'All'},{v:'reels',l:'Reels'},{v:'post',l:'Post'}],ui.type,'type');
   seg($('#fStatus'),[{v:'all',l:'All'},{v:'open',l:'Hide done'}],ui.status,'status');
 }
 function renderLegend(){
   const items=state.settings.brands.map(b=>`<span class="k">${logoHtml(b)}${esc(b.name)}</span>`).join('');
-  $('#legend').innerHTML=items+`<span class="k">No logo = general / pre-production</span><span class="k"><span class="ext">EXT</span> = External content (any stage outsourced)</span><span class="k"><span class="box"></span>White = Personal</span><span class="k"><span class="box dash"></span>Tinted, dashed = Outsource</span><span class="k"><span class="box today"></span>Current week</span><span class="k">Click any task to edit</span>`;
+  $('#legend').innerHTML=items+`<span class="k">No logo = general / pre-production</span><span class="k"><span class="box"></span>White = Self</span><span class="k"><span class="box dash"></span>Tinted, dashed = Outsource</span><span class="k"><span class="box today"></span>Current week</span><span class="k">Click any task to edit</span>`;
 }
 
 /* ---------- schedule (real months) ---------- */
@@ -752,7 +746,7 @@ function renderWeekCards(specs,pool,allPool,cap,o){
     const pct=Math.min(100,used/cap*100);const cls=used>cap?'over':(used>=cap*0.9?'warn':'');
     const isNow=o.real&&sp.m===CUR_YM&&w===CUR_W;
     const doneN=list.filter(t=>t.done).length;
-    h+=`<div class="card wk-card ${isNow?'now':''} ${sp.grp!=='this'?'other':''}">${isNow?'<span class="nowtag">This week</span>':''}<h3>${o.real&&sp.grp!=='this'?`<span class="mo">${monthShort(sp.m)}</span>`:''}W${w}<small>${o.real?weekRange(sp.m,w):WEEK_DAYS[w]}</small></h3><div class="bar"><i class="${cls}" style="width:${pct}%"></i></div><div class="cap"><b>${used}</b> / ${cap} personal days${o.real&&list.length?` · ${doneN}/${list.length} done`:''}</div>`;
+    h+=`<div class="card wk-card ${isNow?'now':''} ${sp.grp!=='this'?'other':''}">${isNow?'<span class="nowtag">This week</span>':''}<h3>${o.real&&sp.grp!=='this'?`<span class="mo">${monthShort(sp.m)}</span>`:''}W${w}<small>${o.real?weekRange(sp.m,w):WEEK_DAYS[w]}</small></h3><div class="bar"><i class="${cls}" style="width:${pct}%"></i></div><div class="cap"><b>${used}</b> / ${cap} self days${o.real&&list.length?` · ${doneN}/${list.length} done`:''}</div>`;
     let any=false;
     STAGES.forEach(st=>{
       const l=list.filter(t=>t.stage===st.id).sort((a,b)=>((a.done|0)-(b.done|0))||itemSort(a.item,b.item)||a.brand.localeCompare(b.brand));
@@ -801,7 +795,7 @@ function capData(tasks){
 function capCell(c,isPost,cap){
   if(!c.n)return '<div class="cp empty"><b>·</b></div>';
   if(isPost)return `<div class="cp"><b>${c.n}</b><small>to post${c.on?' · '+c.on+' out':''}</small></div>`;
-  return `<div class="cp ${cap!==undefined&&c.pd>cap?'over':''}"><b>${c.pd}d</b><small>${c.pn} personal${c.on?' · '+c.on+' out':''}</small></div>`;
+  return `<div class="cp ${cap!==undefined&&c.pd>cap?'over':''}"><b>${c.pd}d</b><small>${c.pn} self${c.on?' · '+c.on+' out':''}</small></div>`;
 }
 function renderCapacity(tasks,cap,isTpl){
   const d=capData(tasks);
@@ -814,10 +808,10 @@ function renderCapacity(tasks,cap,isTpl){
   const outTotal=stageOn.reduce((a,b)=>a+b,0);
   const maxW=Math.max(cap,...weekPd);
   let h=`<div class="capgrid">
-    <div class="card"><div class="kpi"><span class="l">Personal days ${isTpl?'per month':'this month'}</span><span class="n">${totalPd}<span> / ${cap*4}</span></span></div><div class="hint" style="margin-top:6px">${Math.round(totalPd/(cap*4)*100)}% of ${cap*4} available days. Posting not timed.</div></div>
-    <div class="card"><div class="kpi"><span class="l">Heaviest stage</span><span class="n">${heavy&&heavy.pd?esc(heavy.st.short):'·'}</span></div><div class="hint" style="margin-top:6px">${heavy&&heavy.pd?`${heavy.pd} days, ${Math.round(heavy.pd/totalPd*100)}% of personal time.`:'No timed tasks.'}</div></div>
+    <div class="card"><div class="kpi"><span class="l">Self days ${isTpl?'per month':'this month'}</span><span class="n">${totalPd}<span> / ${cap*4}</span></span></div><div class="hint" style="margin-top:6px">${Math.round(totalPd/(cap*4)*100)}% of ${cap*4} available days. Posting not timed.</div></div>
+    <div class="card"><div class="kpi"><span class="l">Heaviest stage</span><span class="n">${heavy&&heavy.pd?esc(heavy.st.short):'·'}</span></div><div class="hint" style="margin-top:6px">${heavy&&heavy.pd?`${heavy.pd} days, ${Math.round(heavy.pd/totalPd*100)}% of self time.`:'No timed tasks.'}</div></div>
     <div class="card"><div class="kpi"><span class="l">Outsourced</span><span class="n">${outTotal}<span> tasks</span></span></div><div class="hint" style="margin-top:6px">${STAGES.map((st,i)=>stageOn[i]?esc(st.short)+' '+stageOn[i]:'').filter(Boolean).join(', ')||'Nothing outsourced'}</div></div>
-    <div class="card wide"><div class="kpi"><span class="l">Weekly load by stage (personal days)</span></div><div class="sbars">`;
+    <div class="card wide"><div class="kpi"><span class="l">Weekly load by stage (self days)</span></div><div class="sbars">`;
   [1,2,3,4].forEach((w,i)=>{
     h+=`<div class="sbar"><span class="lab">W${w}</span><div class="tr">${STAGES.filter(st=>st.id!=='post').map(st=>{const v=d[st.id][w].pd;return v?`<i style="width:${v/maxW*100}%;background:${STAGE_COLOR[st.id]}" title="${esc(st.short)} ${v}d"></i>`:''}).join('')}<span class="capline" style="left:${cap/maxW*100}%"></span></div><span class="tot ${weekPd[i]>cap?'over':''}">${weekPd[i]} / ${cap}d</span></div>`;
   });
@@ -855,7 +849,7 @@ let editing=null,tplMode=false;
 function setRows(tpl){['#rowWeek','#rowCycle','#rowDone','#rowTitle'].forEach(r=>$(r).style.display=tpl?'none':'');['#rowTplWeek','#rowCycleRel'].forEach(r=>$(r).style.display=tpl?'':'none')}
 function fillCommon(){
   $('#tItem').value=editing.item;
-  $('#tBrand').innerHTML=[GENERAL,...state.settings.brands].map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+  $('#tBrand').innerHTML=[GENERAL,ALLB,...state.settings.brands].map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
   $('#tBrand').value=editing.brand;
   $('#tStage').innerHTML=STAGES.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   $('#tStage').value=editing.stage;
@@ -903,7 +897,7 @@ $('#tSave').onclick=()=>{
   if(!$('#tMonth').value){toast('Pick a month');return}
   const t={...editing,item,title:$('#tTitle').value.trim(),brand:$('#tBrand').value,stage:$('#tStage').value,month:$('#tMonth').value,week:Number($('#tWeek').value),cycle:$('#tCycle').value||$('#tMonth').value,days:Number($('#tDays').value)||0,note:$('#tNote').value.trim()};
   $('#taskOv').classList.remove('show');
-  const sib=(t.title!==(editing.title||'')&&t.brand!=='')?allTasks().filter(x=>x.id!==t.id&&x.brand===t.brand&&x.item===t.item&&(x.cycle||x.month)===t.cycle):[];
+  const sib=(t.title!==(editing.title||'')&&t.brand!==''&&t.brand!=='all')?allTasks().filter(x=>x.id!==t.id&&x.brand===t.brand&&x.item===t.item&&(x.cycle||x.month)===t.cycle):[];
   pushUndo((state.tasks[t.id]?'edit ':'add ')+t.item,[{kind:'task',id:t.id,prev:clone(state.tasks[t.id])||null},...sib.map(x=>({kind:'task',id:x.id,prev:clone(x)}))]);
   persistTask(t,{noUndo:true});
   sib.forEach(x=>persistTask({...x,title:t.title},{noUndo:true}));
@@ -913,6 +907,13 @@ $('#tDelete').onclick=()=>{if(confirm('Delete this task?')){$('#taskOv').classLi
   if(tplMode){const prev=clone(state.template.tasks);state.template.tasks=state.template.tasks.filter(x=>x.id!==editing.id);persistTemplate({prev,label:'delete template '+editing.item})}else removeTask(editing.id)}};
 $('#addBtn').onclick=()=>ui.view==='template'?openTplTask(null):openTask(null);
 document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show')}));
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&!e.shiftKey&&e.key.toLowerCase()==='z'){
+    const tag=(document.activeElement&&document.activeElement.tagName)||'';
+    if(['INPUT','TEXTAREA','SELECT'].includes(tag)||document.querySelector('.ov.show'))return;
+    e.preventDefault();undo();
+  }
+});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.ov.show').forEach(o=>o.classList.remove('show'))});
 
 /* ================= generate month ================= */
