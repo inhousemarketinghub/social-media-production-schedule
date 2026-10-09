@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Social Media Production Schedule</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -52,7 +55,7 @@ button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--today-line);outline-offset:2px}
 input,select,textarea{font-family:inherit;font-size:14px;color:var(--text);background:var(--card);border:1px solid var(--line2);border-radius:var(--r-s);padding:9px 12px;width:100%}
 textarea{resize:vertical;min-height:64px}
-.page{max-width:1280px;margin:0 auto;padding:22px 18px 56px}
+.page{max-width:none;margin:0 auto;padding:22px 28px 56px}
 
 /* ---------- login ---------- */
 .gate{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;padding:20px;z-index:70}
@@ -147,7 +150,8 @@ h1{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:-0.01e
 .mx .stack .chip{width:100%}
 
 /* ---------- by week ---------- */
-.wk-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.wk-cards{display:grid;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));gap:14px}
+@media (max-width:900px){.wk-cards{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}}
 .wk-card h3 .mo{font-family:var(--sans);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .wk-card.other{background:var(--card2)}
 .wk-card{position:relative}
@@ -307,6 +311,7 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
     <div class="card sub filters">
       <div class="frow"><span class="flabel" title="Who produces: only affects Designing and Editing tasks. Other stages always show.">Production</span><div class="seg" id="fOwner"></div></div>
       <div class="frow"><span class="flabel">Brand</span><div class="seg" id="fBrand"></div></div>
+      <div class="frow" id="rowMonth"><span class="flabel" title="Which month's content batch. Matches the month tag on each pill.">Month</span><div class="seg" id="fMonth"></div></div>
       <div class="frow"><span class="flabel">Type</span><div class="seg" id="fType"></div></div>
       <div class="frow"><span class="flabel">Status</span><div class="seg" id="fStatus"></div></div>
       <div class="actions">
@@ -345,7 +350,7 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
     <div class="f" id="rowWeek"><label>Week</label><div class="two"><input type="month" id="tMonth"><select id="tWeek"><option value="1">W1 (1 to 7)</option><option value="2">W2 (8 to 14)</option><option value="3">W3 (15 to 21)</option><option value="4">W4 (22 to end)</option></select></div></div>
     <div class="f" id="rowCycle"><label>Posting cycle</label><input type="month" id="tCycle" title="Which month this content is posted in."></div>
     <div class="f" id="rowTplWeek"><label>Week</label><select id="tWeek2"><option value="1">W1 (1 to 7)</option><option value="2">W2 (8 to 14)</option><option value="3">W3 (15 to 21)</option><option value="4">W4 (22 to end)</option></select></div>
-    <div class="f" id="rowCycleRel"><label>Posted in</label><div class="radio" id="tCycleRel"><button data-v="0">This month</button><button data-v="1">Next month</button></div></div>
+    <div class="f" id="rowCycleRel"><label>Posted in</label><div class="radio" id="tCycleRel"><button data-v="-1">Last month</button><button data-v="0">This month</button><button data-v="1">Next month</button></div></div>
     <div class="f"><label>Est. days</label><input type="number" id="tDays" min="0" step="0.5" placeholder="0"></div>
     <div class="f"><label>Note</label><textarea id="tNote" placeholder="Optional"></textarea></div>
     <div class="f" id="rowDone"><label>Status</label><div class="radio" id="tDone"><button data-v="0">To do</button><button data-v="1">Done</button></div></div>
@@ -389,7 +394,7 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
 <div class="ov" id="applyOv">
   <div class="modal">
     <h3>Generate a month from the template</h3>
-    <p class="hint" style="margin:0 0 12px">Creates every template task inside the month you pick. Tasks marked "Posted in next month" get their posting cycle moved forward automatically.</p>
+    <p class="hint" style="margin:0 0 12px">Creates every template task inside the month you pick. Tasks marked "Posted in last month" or "next month" get their month tag shifted automatically.</p>
     <div class="f"><label>Month</label><input type="month" id="aMonth"></div>
     <div class="mfoot"><div class="r"><button class="btn" id="aCancel">Cancel</button><button class="btn ink" id="aGo">Generate</button></div></div>
   </div>
@@ -470,7 +475,7 @@ $('#themeBtn').onclick=()=>{const t=document.documentElement.getAttribute('data-
 let state={tasks:{},settings:JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),template:{tasks:[]}};
 const WEEKS_WEEK_DEFAULT=[{dm:0,w:1},{dm:0,w:2},{dm:0,w:3},{dm:0,w:4}];
 const WEEKS_MATRIX_DEFAULT=[{dm:-1,w:4},{dm:0,w:1},{dm:0,w:2},{dm:0,w:3},{dm:0,w:4},{dm:1,w:1},{dm:1,w:2}];
-let ui={view:'schedule',sub:'week',tplSub:'week',capAxis:'stage',owner:'all',brand:'all',type:'all',status:'all',month:CUR_YM,weeksWeek:WEEKS_WEEK_DEFAULT.slice(),weeksMatrix:WEEKS_MATRIX_DEFAULT.slice()};
+let ui={view:'schedule',sub:'week',tplSub:'week',capAxis:'stage',owner:'all',brand:'all',type:'all',status:'all',cycle:'all',month:CUR_YM,weeksWeek:WEEKS_WEEK_DEFAULT.slice(),weeksMatrix:WEEKS_MATRIX_DEFAULT.slice()};
 (function(){try{const r=localStorage.getItem('sm-ui');if(r){const o=JSON.parse(r);if(o.weeksWeek)ui.weeksWeek=o.weeksWeek;if(o.weeksMatrix)ui.weeksMatrix=o.weeksMatrix}}catch(e){}})();
 function saveUi(){try{localStorage.setItem('sm-ui',JSON.stringify({weeksWeek:ui.weeksWeek,weeksMatrix:ui.weeksMatrix}))}catch(e){}}
 let canWrite=true,mode='local';
@@ -481,11 +486,15 @@ function visible(t,ignoreDone){
   if(!ignoreDone&&ui.status==='open'&&t.done)return false;
   if(ui.owner!=='all'&&(t.stage==='design'||t.stage==='edit')&&t.owner!==ui.owner)return false;
   if(ui.brand!=='all'&&t.brand!==ui.brand&&t.brand!=='all')return false;
+  if(ui.cycle!=='all'&&t.month&&(t.cycle||t.month)!==ui.cycle)return false;
   if(ui.type!=='all'&&itemType(t.item)!==ui.type)return false;
   return true;
 }
 function allTasks(){return Object.values(state.tasks)}
-function tplTasks(){return (state.template.tasks||[]).map(t=>({...t,days:Number(t.days)||0}))}
+function tplRel(t){return t.cycleRel!=null?Number(t.cycleRel)||0:(t.cycleNext?1:0)}
+function monthDiff(a,b){const [ay,am]=a.split('-').map(Number),[by,bm]=b.split('-').map(Number);return (by-ay)*12+(bm-am)}
+function relTag(t){const r=tplRel(t);return r?`<span class="cy">${r<0?'Last mo':'Next mo'}</span>`:''}
+function tplTasks(){return (state.template.tasks||[]).map(t=>({...t,days:Number(t.days)||0,cycleRel:tplRel(t)}))}
 function capDays(){return Number(state.settings.workDays)||5}
 
 /* ================= persistence ================= */
@@ -606,7 +615,7 @@ function chipHtml(t,tpl){
   const cls='chip'+(t.owner==='outsource'?' out':'')+(t.done?' done':'');
   const days=t.days>0?`<span class="d">${t.days}d</span>`:'';
   const tip=`${esc(t.item)}${t.title?' · '+esc(t.title):''} (${esc(b.name)}) · ${esc(st.name)} · ${t.owner}${t.cycle?' · posted '+monthShort(t.cycle):''}${t.note?' · '+esc(t.note):''}`;
-  return `<button class="${cls}" draggable="${canWrite?'true':'false'}" data-id="${t.id}" ${tpl?'data-tpl="1"':''} title="${tip}"><span class="row1">${logoHtml(b)}${t.done?ICON.check:ICON[st.id]}<span class="lbl">${esc(t.item)}</span>${tpl?'':cycTag(t)}${days}</span>${t.title?`<span class="ttl">${esc(t.title)}</span>`:''}</button>`;
+  return `<button class="${cls}" draggable="${canWrite?'true':'false'}" data-id="${t.id}" ${tpl?'data-tpl="1"':''} title="${tip}"><span class="row1">${logoHtml(b)}${t.done?ICON.check:ICON[st.id]}<span class="lbl">${esc(t.item)}</span>${tpl?relTag(t):cycTag(t)}${days}</span>${t.title?`<span class="ttl">${esc(t.title)}</span>`:''}</button>`;
 }
 function rowHtml(t,tpl){
   const b=brandOf(t.brand);
@@ -652,6 +661,10 @@ function seg(el,items,cur,key){
 function renderFilters(){
   seg($('#fOwner'),[{v:'all',l:'All'},{v:'personal',l:'Self'},{v:'outsource',l:'Outsource'}],ui.owner,'owner');
   seg($('#fBrand'),[{v:'all',l:'All'},...state.settings.brands.map(b=>({v:b.id,l:b.name,logo:logoHtml(b)}))],ui.brand,'brand');
+  const months=[...new Set(allTasks().map(t=>t.cycle||t.month))].filter(Boolean).sort();
+  if(ui.cycle!=='all'&&!months.includes(ui.cycle))ui.cycle='all';
+  seg($('#fMonth'),[{v:'all',l:'All'},...months.map(m=>({v:m,l:monthLabel(m)}))],ui.cycle,'cycle');
+  $('#rowMonth').style.display=ui.view==='template'?'none':'';
   seg($('#fType'),[{v:'all',l:'All'},{v:'reels',l:'Reels'},{v:'post',l:'Post'}],ui.type,'type');
   seg($('#fStatus'),[{v:'all',l:'All'},{v:'open',l:'Hide done'}],ui.status,'status');
 }
@@ -732,13 +745,13 @@ function buildTemplateFromMonth(){
   const src=allTasks().filter(t=>t.month===ui.month);
   if(!src.length){toast('No tasks in '+monthLabel(ui.month)+' to build from');return}
   const prev=clone(state.template.tasks);
-  state.template={tasks:src.map(t=>({id:uid(),item:t.item,brand:t.brand,stage:t.stage,owner:t.owner,days:Number(t.days)||0,week:t.week,cycleNext:(t.cycle||t.month)!==t.month,note:t.note||''}))};
+  state.template={tasks:src.map(t=>({id:uid(),item:t.item,brand:t.brand,stage:t.stage,owner:t.owner,days:Number(t.days)||0,week:t.week,cycleRel:monthDiff(t.month,t.cycle||t.month),note:t.note||''}))};
   persistTemplate({prev,label:'build template'});toast('Template built from '+monthLabel(ui.month));
 }
 
 /* ---------- by week (shared) ---------- */
 function renderWeekCards(specs,pool,allPool,cap,o){
-  let h='<div class="wk-cards">';
+  let h=`<div class="wk-cards" style="--cols:${Math.min(specs.length,6)||1}">`;
   specs.forEach(sp=>{
     const w=sp.w;
     const list=pool.filter(t=>t.month===sp.m&&t.week===w);
@@ -863,7 +876,7 @@ function fillCommon(){
 function openTplTask(id){
   tplMode=true;setRows(true);
   const ex=id?state.template.tasks.find(t=>t.id===id):null;
-  editing=ex?{...ex}:{id:uid(),item:'',brand:state.settings.brands[0]?.id||'',stage:'design',owner:'personal',week:1,cycleNext:false,days:0,note:''};
+  editing=ex?{...ex}:{id:uid(),item:'',brand:state.settings.brands[0]?.id||'',stage:'design',owner:'personal',week:1,cycleRel:0,days:0,note:''};
   $('#taskTitle').textContent=id?'Edit template task':'New template task';
   $('#tWeek2').value=editing.week;
   $('#tDelete').style.visibility=id?'visible':'hidden';
@@ -880,16 +893,16 @@ function openTask(id){
 function syncRadios(){
   $('#tOwner').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===editing.owner));
   $('#tDone').querySelectorAll('button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===!!editing.done));
-  $('#tCycleRel').querySelectorAll('button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===!!editing.cycleNext));
+  $('#tCycleRel').querySelectorAll('button').forEach(b=>b.classList.toggle('on',Number(b.dataset.v)===tplRel(editing)));
 }
 $('#tOwner').querySelectorAll('button').forEach(b=>b.onclick=()=>{editing.owner=b.dataset.v;syncRadios()});
 $('#tDone').querySelectorAll('button').forEach(b=>b.onclick=()=>{editing.done=b.dataset.v==='1';syncRadios()});
-$('#tCycleRel').querySelectorAll('button').forEach(b=>b.onclick=()=>{editing.cycleNext=b.dataset.v==='1';syncRadios()});
+$('#tCycleRel').querySelectorAll('button').forEach(b=>b.onclick=()=>{editing.cycleRel=Number(b.dataset.v);delete editing.cycleNext;syncRadios()});
 $('#tCancel').onclick=()=>$('#taskOv').classList.remove('show');
 $('#tSave').onclick=()=>{
   const item=$('#tItem').value.trim();if(!item){toast('Give the task a name, e.g. Reels 1');return}
   if(tplMode){
-    const t={...editing,item,brand:$('#tBrand').value,stage:$('#tStage').value,week:Number($('#tWeek2').value),days:Number($('#tDays').value)||0,note:$('#tNote').value.trim()};
+    const t={...editing,item,brand:$('#tBrand').value,stage:$('#tStage').value,week:Number($('#tWeek2').value),days:Number($('#tDays').value)||0,note:$('#tNote').value.trim(),cycleRel:tplRel(editing)};delete t.cycleNext;
     const prev=clone(state.template.tasks);
     const i=state.template.tasks.findIndex(x=>x.id===t.id);if(i>=0)state.template.tasks[i]=t;else state.template.tasks.push(t);
     $('#taskOv').classList.remove('show');persistTemplate({prev,label:'edit template '+t.item});return;
@@ -924,7 +937,7 @@ $('#aGo').onclick=async()=>{
   const src=tplTasks();if(!src.length){toast('Template is empty');return}
   if(allTasks().some(t=>t.month===to)&&!confirm(monthLabel(to)+' already has tasks. Add the template on top?'))return;
   $('#applyOv').classList.remove('show');let n=0;const made=[];
-  for(const t of src){const c={id:uid(),item:t.item,brand:t.brand,stage:t.stage,owner:t.owner,days:t.days,note:t.note||'',month:to,week:t.week,cycle:t.cycleNext?addMonths(to,1):to,done:false};state.tasks[c.id]=c;made.push(c.id);
+  for(const t of src){const c={id:uid(),item:t.item,brand:t.brand,stage:t.stage,owner:t.owner,days:t.days,note:t.note||'',month:to,week:t.week,cycle:addMonths(to,t.cycleRel),done:false};state.tasks[c.id]=c;made.push(c.id);
     if(sb){if(!await sbWrite(()=>sb.from('sm_tasks').upsert(taskToRow(c))))break}n++;toast(`Creating ${n} / ${src.length}`,1500)}
   if(!sb)saveLocal();
   pushUndo('generate '+monthLabel(to),made.map(id=>({kind:'task',id,prev:null})));
