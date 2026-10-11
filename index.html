@@ -139,6 +139,8 @@ h1{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:-0.01e
 .tk-ic{display:inline-flex;flex:none;opacity:.7}
 .tk-ic svg{width:12px;height:12px;display:block}
 .tk-name{font-weight:700;white-space:nowrap}
+.tk-mo{font-weight:700;font-size:10.5px;opacity:.6;margin-right:5px;text-transform:uppercase;letter-spacing:.05em}
+.tk-date{font-size:12px;font-weight:600;opacity:.8}
 .tk-ttl{font-size:12px;font-weight:500;opacity:.85;overflow-wrap:anywhere}
 .tk-tags{display:flex;flex-wrap:wrap;gap:4px}
 .tg{font-size:10.5px;font-weight:600;padding:0 6px;border-radius:999px;border:1px solid var(--line2);background:var(--card);color:inherit;line-height:1.6;white-space:nowrap}
@@ -152,6 +154,11 @@ h1{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:-0.01e
 .logo.lg{height:28px;max-width:100px}
 .logo.ini.lg{width:28px;height:28px;font-size:12px}
 .mx td.over{background:var(--sun-soft) !important;box-shadow:inset 0 0 0 2px var(--today-line)}
+.mx td.drop{position:relative;padding-top:38px}
+.mx .dsum{position:absolute;top:11px;left:10px;margin:0}
+.addc{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--ink-text);display:none;align-items:center;justify-content:center;font-size:17px;line-height:1;z-index:2;box-shadow:var(--shadow)}
+.mx td.drop:hover .addc,.wk-card:hover .addc{display:inline-flex}
+.wk-card .addc{top:22px;right:18px}
 
 /* ---------- by week ---------- */
 .wk-cards{display:grid;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));gap:14px}
@@ -241,6 +248,7 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
 .f .radio button.on{background:var(--ink);color:var(--ink-text);border-color:var(--ink)}
 .mfoot{display:flex;justify-content:space-between;gap:8px;margin-top:18px;flex-wrap:wrap}
 .mfoot .r{display:flex;gap:8px;margin-left:auto}
+.mfoot .l{display:flex;gap:8px}
 .brand-row{display:grid;grid-template-columns:84px 1fr 80px 110px 34px;gap:8px;align-items:center;margin-bottom:8px}
 .brand-row .logo-btn{width:84px;height:36px;border-radius:8px;border:1.5px dashed var(--line2);display:inline-flex;align-items:center;justify-content:center;overflow:hidden;background:var(--card2);font-size:10px;color:var(--muted);padding:3px}
 .brand-row .logo-btn img{max-width:100%;max-height:100%;object-fit:contain}
@@ -361,7 +369,7 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
 <div class="ov" id="taskOv">
   <div class="modal">
     <h3 id="taskTitle">Edit task</h3>
-    <div class="f"><label>Content</label><input id="tItem" list="itemList" placeholder="Reels 1 / Post 2 / Content Planning"><datalist id="itemList"></datalist></div>
+    <div class="f"><label>Content</label><div class="two" style="grid-template-columns:1.5fr 1fr"><select id="tType"></select><input type="number" id="tNum" min="1" step="1" placeholder="No."><input id="tItem" placeholder="Name of task"></div></div>
     <div class="f" id="rowTitle"><label>Name</label><input id="tTitle" placeholder="e.g. Sofa fabric guide (applies to every stage of this content)"></div>
     <div class="f"><label>Brand</label><select id="tBrand"></select></div>
     <div class="f"><label>Stage</label><select id="tStage"></select></div>
@@ -371,12 +379,12 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
     <div class="f" id="rowCycle"><label>Posting cycle</label><input type="month" id="tCycle" title="Which month this content is posted in."></div>
     <div class="f" id="rowDate"><label>Posting date</label><input type="date" id="tDate" title="The day this content goes live. Shared by every stage of this content. On a Posting task it also sets the week."></div>
     <div class="f" id="rowTplWeek"><label>Week</label><select id="tWeek2"><option value="1">W1 (1st week)</option><option value="2">W2 (2nd week)</option><option value="3">W3 (3rd week)</option><option value="4">W4 (4th week)</option></select></div>
-    <div class="f" id="rowCycleRel"><label>Posted in</label><div class="radio" id="tCycleRel"><button data-v="-1">Last month</button><button data-v="0">This month</button><button data-v="1">Next month</button></div></div>
+    <div class="f" id="rowCycleRel"><label>Batch</label><div><div class="radio" id="tCycleRel"><button data-v="-1">Last month</button><button data-v="0">This month</button><button data-v="1">Next month</button></div><div class="hint" style="margin-top:5px">Which month's content this task belongs to. Finishing last month's Post 3/4 in W1 to W2 = Last month. Planning in W4 for next month = Next month.</div></div></div>
     <div class="f" id="rowDays"><label>Est. days</label><input type="number" id="tDays" min="0" step="0.5" placeholder="0"></div>
     <div class="f"><label>Note</label><textarea id="tNote" placeholder="Optional"></textarea></div>
     <div class="f" id="rowDone"><label>Status</label><div class="radio" id="tDone"><button data-v="0">To do</button><button data-v="1">Done</button></div></div>
     <div class="mfoot">
-      <button class="btn danger" id="tDelete">Delete</button>
+      <div class="l"><button class="btn danger" id="tDelete">Delete</button><button class="btn" id="tDup" title="Make a copy of this task">Duplicate</button></div>
       <div class="r"><button class="btn" id="tCancel">Cancel</button><button class="btn ink" id="tSave">Save</button></div>
     </div>
   </div>
@@ -504,6 +512,7 @@ function logoHtml(b,lg){
 }
 function cycTag(t){return t.cycle?`<span class="tg">${esc(monthShort(t.cycle))}</span>`:''}
 function dateTag(t){return t.stage==='post'&&t.date?`<span class="tg">${dayLabel(t.date)}</span>`:''}
+function fmtDMY(ds){const [y,m,d]=ds.split('-');return d+'-'+m+'-'+y}
 function dayLabel(ds){const [y,m,d]=ds.split('-').map(Number);return d+' '+monthShort(y+'-'+String(m).padStart(2,'0'))}
 function dateCmp(a,b){return a.date&&b.date?a.date.localeCompare(b.date):0}
 function shiftDate(ds,n){const [y,m,d]=ds.split('-').map(Number);const last=new Date(y,m-1+n+1,0).getDate();const dt=new Date(y,m-1+n,Math.min(d,last));return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
@@ -518,6 +527,9 @@ $('#monthsOv').querySelectorAll('[data-mpreset]').forEach(b=>b.onclick=()=>{cons
 $('#mCancel').onclick=()=>$('#monthsOv').classList.remove('show');
 $('#mApply').onclick=()=>{ui.months=[...$('#monthsGrid').querySelectorAll('input:checked')].map(i=>i.dataset.m);$('#monthsOv').classList.remove('show');render()};
 function itemType(item){const s=(item||'').toLowerCase();if(s.startsWith('reel'))return 'reels';if(s.startsWith('post'))return 'post';return 'general'}
+const ITEM_TYPES=[['reels','Reels'],['post','Post'],['plan','Content Planning'],['draft','Content Drafting'],['other','Other']];
+function parseItem(item){const s=(item||'').trim();const t=itemType(s);if(t!=='general'){const m=s.match(/\d+/);return {type:t,num:m?Number(m[0]):'',text:''}}if(/^content planning$/i.test(s))return {type:'plan',num:'',text:''};if(/^content drafting$/i.test(s))return {type:'draft',num:'',text:''};return {type:s?'other':'reels',num:'',text:s}}
+function buildItem(type,num,text){if(type==='reels')return num?'Reels '+num:'';if(type==='post')return num?'Post '+num:'';if(type==='plan')return 'Content Planning';if(type==='draft')return 'Content Drafting';return (text||'').trim()}
 function itemSort(a,b){const ta=itemType(a),tb=itemType(b);const o={general:0,reels:1,post:2};if(o[ta]!==o[tb])return o[ta]-o[tb];const na=parseInt((a.match(/\d+/)||[0])[0]),nb=parseInt((b.match(/\d+/)||[0])[0]);return na-nb||a.localeCompare(b)}
 function stageIdx(id){return STAGES.findIndex(s=>s.id===id)}
 function toast(msg,ms=2200){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),ms)}
@@ -548,6 +560,9 @@ function visible(t,ignoreDone){
 }
 function allTasks(){return Object.values(state.tasks)}
 /* All stages of one piece of content share brand + item + month tag. Name, date, item and brand stay in sync across them. */
+function tplSiblings(t){if(!t||!t.brand||t.brand==='all')return [];return (state.template.tasks||[]).filter(x=>x.id!==t.id&&x.brand===t.brand&&x.item===t.item&&tplRel(x)===tplRel(t))}
+/* A content is outsourced when its Designing or Editing is. Shooting and Posting cards of that content show the dashed look too. */
+function outsourcedLook(t,tpl){if(t.owner==='outsource')return true;if(t.stage!=='shoot'&&t.stage!=='post')return false;return (tpl?tplSiblings(t):siblings(t)).some(x=>(x.stage==='design'||x.stage==='edit')&&x.owner==='outsource')}
 function siblings(t){if(!t||!t.brand||t.brand==='all')return [];const cy=t.cycle||t.month;return allTasks().filter(x=>x.id!==t.id&&x.brand===t.brand&&x.item===t.item&&(x.cycle||x.month)===cy).sort((a,b)=>stageIdx(a.stage)-stageIdx(b.stage))}
 function ask(title,msg,buttons){return new Promise(res=>{$('#askTitle').textContent=title;$('#askMsg').textContent=msg||'';$('#askMsg').style.display=msg?'':'none';$('#askBtns').innerHTML=buttons.map((b,i)=>`<button class="btn ${b.cls||''}" data-i="${i}">${esc(b.label)}</button>`).join('');const done=v=>{$('#askOv').classList.remove('show');$('#askOv')._cancel=null;res(v)};$('#askBtns').querySelectorAll('button').forEach(b=>b.onclick=()=>done(buttons[Number(b.dataset.i)].value));$('#askOv')._cancel=()=>done(null);$('#askOv').classList.add('show');setTimeout(()=>{const f=$('#askBtns button.ink')||$('#askBtns button');if(f)f.focus()},30)})}
 function tplRel(t){return t.cycleRel!=null?Number(t.cycleRel)||0:(t.cycleNext?1:0)}
@@ -671,14 +686,17 @@ $('#gEmail').addEventListener('keydown',e=>{if(e.key==='Enter')$('#gSend').click
 /* ================= small renderers ================= */
 function cardHtml(t,o){
   const b=brandOf(t.brand);const st=STAGES[stageIdx(t.stage)]||STAGES[0];
-  const cls='tk '+itemType(t.item)+(t.owner==='outsource'?' out':'')+(t.done?' done':'');
+  const cls='tk '+itemType(t.item)+(outsourcedLook(t,o.tpl)?' out':'')+(t.done?' done':'');
   const tip=`${esc(t.item)}${t.title?' · '+esc(t.title):''} (${esc(b.name)}) · ${esc(st.name)} · ${t.owner==='outsource'?'Outsource':'Self'}${t.cycle?' · batch '+monthShort(t.cycle):''}${t.date?' · live '+dayLabel(t.date):''}${t.note?' · '+esc(t.note):''}`;
   const cb=o.check?`<input type="checkbox" data-done="${t.id}" ${t.done?'checked':''} ${canWrite?'':'disabled'} aria-label="Mark done">`:'';
-  const tags=(o.tpl?relTag(t):cycTag(t)+dateTag(t))+(t.owner!=='outsource'&&t.days>0?`<span class="tg d">${t.days}d</span>`:'')+(t.owner==='outsource'?'<span class="tg o">Outsource</span>':'');
-  return `<div class="${cls}" draggable="${o.drag&&canWrite?'true':'false'}" data-id="${t.id}" ${o.tpl?'data-tpl="1"':''} title="${tip}"><div class="tk-top">${cb}${logoHtml(b)}<span class="tk-ic">${t.done?ICON.check:ICON[st.id]}</span><span class="tk-name">${esc(t.item)}</span></div>${t.title?`<div class="tk-ttl">${esc(t.title)}</div>`:''}${tags?`<div class="tk-tags">${tags}</div>`:''}</div>`;
+  const tags=(o.tpl?relTag(t):'')+(t.owner!=='outsource'&&t.days>0?`<span class="tg d">${t.days}d</span>`:'');
+  const mo=!o.tpl&&t.cycle?`<span class="tk-mo">${esc(monthShort(t.cycle))}</span>`:'';
+  const date=!o.tpl&&t.stage==='post'&&t.date?`<div class="tk-date">${fmtDMY(t.date)}</div>`:'';
+  return `<div class="${cls}" draggable="${o.drag&&canWrite?'true':'false'}" data-id="${t.id}" ${o.tpl?'data-tpl="1"':''} title="${tip}"><div class="tk-top">${cb}${logoHtml(b)}<span class="tk-ic">${t.done?ICON.check:ICON[st.id]}</span><span class="tk-name">${mo}${esc(t.item)}</span></div>${t.title?`<div class="tk-ttl">${esc(t.title)}</div>`:''}${date}${tags?`<div class="tk-tags">${tags}</div>`:''}</div>`;
 }
 function bindTasks(){
   document.querySelectorAll('.tk[data-id]').forEach(el=>el.onclick=e=>{if(e.target.closest('input'))return;el.dataset.tpl?openTplTask(el.dataset.id):openTask(el.dataset.id)});
+  document.querySelectorAll('[data-add-m]').forEach(b=>b.onclick=e=>{e.stopPropagation();const pre={week:Number(b.dataset.addW),stage:b.dataset.addS||''};if(b.dataset.addM==='tpl')openTplTask(null,{preset:pre});else openTask(null,{preset:{...pre,month:b.dataset.addM}})});
   document.querySelectorAll('[data-done]').forEach(cb=>cb.onchange=()=>persistTask({...state.tasks[cb.dataset.done],done:cb.checked},{label:(cb.checked?'tick ':'untick ')+state.tasks[cb.dataset.done].item}));
   document.querySelectorAll('.tk[draggable="true"]').forEach(c=>{
     c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',JSON.stringify({id:c.dataset.id,tpl:!!c.dataset.tpl}));e.dataTransfer.effectAllowed='move';c.classList.add('dragging')});
@@ -815,7 +833,7 @@ function renderWeekCards(specs,pool,allPool,cap,o){
     const pct=Math.min(100,used/cap*100);const cls=used>cap?'over':(used>=cap*0.9?'warn':'');
     const isNow=o.real&&sp.m===CUR_YM&&w===CUR_W;
     const doneN=list.filter(t=>t.done).length;
-    h+=`<div class="card wk-card ${isNow?'now':''} ${sp.grp!=='this'?'other':''}">${isNow?'<span class="nowtag">This week</span>':''}<h3>${o.real&&sp.grp!=='this'?`<span class="mo">${monthShort(sp.m)}</span>`:''}W${w}<small>${o.real?weekRange(sp.m,w):WEEK_DAYS[w]}</small></h3><div class="bar"><i class="${cls}" style="width:${pct}%"></i></div><div class="cap"><b>${used}</b> / ${cap} self days${o.real&&list.length?` · ${doneN}/${list.length} done`:''}</div>`;
+    h+=`<div class="card wk-card ${isNow?'now':''} ${sp.grp!=='this'?'other':''}">${canWrite?`<button class="addc" data-add-m="${sp.m}" data-add-w="${w}" title="Add a task to this week">+</button>`:''}${isNow?'<span class="nowtag">This week</span>':''}<h3>${o.real&&sp.grp!=='this'?`<span class="mo">${monthShort(sp.m)}</span>`:''}W${w}<small>${o.real?weekRange(sp.m,w):WEEK_DAYS[w]}</small></h3><div class="bar"><i class="${cls}" style="width:${pct}%"></i></div><div class="cap"><b>${used}</b> / ${cap} self days${o.real&&list.length?` · ${doneN}/${list.length} done`:''}</div>`;
     let any=false;
     STAGES.forEach(st=>{
       const l=list.filter(t=>t.stage===st.id).sort((a,b)=>((a.done|0)-(b.done|0))||dateCmp(a,b)||itemSort(a.item,b.item)||a.brand.localeCompare(b.brand));
@@ -846,7 +864,7 @@ function renderMatrix(rows,pool,o){
     STAGES.forEach(s=>{
       const list=pool.filter(t=>t.month===r.m&&t.week===r.w&&t.stage===s.id).sort((a,b)=>dateCmp(a,b)||itemSort(a.item,b.item)||a.brand.localeCompare(b.brand));
       const d=s.id==='post'?0:list.filter(t=>t.owner==='personal').reduce((x,t)=>x+(Number(t.days)||0),0);
-      h+=`<td class="drop" data-m="${r.m}" data-w="${r.w}" data-s="${s.id}">${d>0?`<div class="dsum"><b>${d}</b> day(s)</div>`:''}<div class="stack">${list.map(t=>cardHtml(t,{tpl:!o.real,drag:true})).join('')}</div></td>`;
+      h+=`<td class="drop" data-m="${r.m}" data-w="${r.w}" data-s="${s.id}">${canWrite?`<button class="addc" data-add-m="${r.m}" data-add-w="${r.w}" data-add-s="${s.id}" title="Add a task here">+</button>`:''}${d>0?`<div class="dsum"><b>${d}</b> day(s)</div>`:''}<div class="stack">${list.map(t=>cardHtml(t,{tpl:!o.real,drag:true})).join('')}</div></td>`;
     });
     h+='</tr>';
   });
@@ -918,18 +936,33 @@ let editing=null,tplMode=false,stageSel=new Set(),formSnap='';
 const STAGE_DEFAULT_DAYS={pre:0,design:0.5,shoot:0.5,edit:1,post:0};
 function setRows(tpl){['#rowWeek','#rowCycle','#rowDate','#rowDone','#rowTitle','#rowStages'].forEach(r=>$(r).style.display=tpl?'none':'');['#rowTplWeek','#rowCycleRel'].forEach(r=>$(r).style.display=tpl?'':'none')}
 function fillWeekOptions(){const ym=$('#tMonth').value||ui.month;const n=weeksIn(ym)||4;const cur=Number($('#tWeek').value)||1;$('#tWeek').innerHTML=Array.from({length:n},(_,i)=>`<option value="${i+1}">W${i+1} (${weekRange(ym,i+1)})</option>`).join('');$('#tWeek').value=Math.min(cur,n)}
+/* Filters on the page become the defaults of a new task. */
+function presetFromFilters(){const p={};if(ui.brand!=='all')p.brand=ui.brand;if(ui.owner!=='all')p.owner=ui.owner;if(ui.type!=='all')p.type=ui.type;if(ui.months.length===1)p.cycle=ui.months[0];return p}
+function nextNum(type){const b=$('#tBrand').value;const pool=tplMode?(state.template.tasks||[]):allTasks().filter(t=>t.month===($('#tMonth').value||ui.month));const nums=pool.filter(t=>t.brand===b&&itemType(t.item)===type).map(t=>parseItem(t.item).num||0);return (nums.length?Math.max(...nums):0)+1}
+function syncItemFields(auto){
+  const ty=$('#tType').value;
+  $('#tNum').style.display=(ty==='reels'||ty==='post')?'':'none';
+  $('#tItem').style.display=ty==='other'?'':'none';
+  if(auto){
+    if(ty==='plan'||ty==='draft'){$('#tStage').value='pre';editing.owner='personal';syncRadios()}
+    else if((ty==='reels'||ty==='post')&&$('#tStage').value==='pre')$('#tStage').value='design';
+    if((ty==='reels'||ty==='post')&&!$('#tNum').value)$('#tNum').value=nextNum(ty);
+    refreshRows();
+  }
+}
 function fillCommon(){
-  $('#tItem').value=editing.item;
+  $('#tType').innerHTML=ITEM_TYPES.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+  const pi=parseItem(editing.item);if(!editing.item&&editing._type)pi.type=editing._type;
+  $('#tType').value=pi.type;$('#tNum').value=pi.num||'';$('#tItem').value=pi.text||'';
   $('#tBrand').innerHTML=[GENERAL,ALLB,...state.settings.brands].map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
   $('#tBrand').value=editing.brand;
   $('#tStage').innerHTML=STAGES.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   $('#tStage').value=editing.stage;
   $('#tDays').value=editing.days||'';$('#tNote').value=editing.note||'';
-  const names=[...new Set([...allTasks(),...state.template.tasks].map(t=>t.item))].sort(itemSort);
-  $('#itemList').innerHTML=names.map(n=>`<option value="${esc(n)}">`).join('');
+  syncItemFields(!editing.item);
   syncRadios();refreshRows();
   $('#tSave').disabled=!canWrite;$('#tDelete').disabled=!canWrite;
-  $('#taskOv').classList.add('show');formSnap=formState();setTimeout(()=>$('#tItem').focus(),50);
+  $('#taskOv').classList.add('show');formSnap=formState();setTimeout(()=>{const f=$('#tType').value==='other'?$('#tItem'):($('#tNum').style.display!=='none'?$('#tNum'):$('#tType'));f.focus()},50);
 }
 /* Shooting and Posting are always done by the Specialist. Outsourced work has no estimated days. */
 function refreshRows(){
@@ -942,28 +975,32 @@ function refreshRows(){
 /* Only a Post can opt into a Shooting stage. Reels always have one. */
 function renderStageToggles(){
   const b=$('#tBrand').value;const cur=$('#tStage').value;stageSel.add(cur);
-  const ok=b&&b!=='all'&&itemType($('#tItem').value)==='post'&&cur!=='shoot';
+  const ok=b&&b!=='all'&&$('#tType').value==='post'&&cur!=='shoot';
   $('#rowStages').style.display=ok?'':'none';if(!ok)return;
   const on=stageSel.has('shoot');
   $('#tStages').innerHTML=`<label class="sw"><input type="checkbox" id="tShoot" ${on?'checked':''}><span class="track"></span><span class="lbl">Shooting</span></label>`;
   $('#tShoot').onchange=e=>{if(e.target.checked)stageSel.add('shoot');else stageSel.delete('shoot');renderStageToggles()};
 }
-function openTplTask(id){
+function openTplTask(id,o={}){
   tplMode=true;setRows(true);
   const ex=id?state.template.tasks.find(t=>t.id===id):null;
-  editing=ex?{...ex}:{id:uid(),item:'',brand:state.settings.brands[0]?.id||'',stage:'design',owner:'personal',week:1,cycleRel:0,days:0,note:''};
-  $('#taskTitle').textContent=id?'Edit template task':'New template task';
+  if(o.copy)editing={...o.copy,id:uid()};
+  else if(ex)editing={...ex};
+  else{const p={...presetFromFilters(),...(o.preset||{})};editing={id:uid(),item:'',_type:p.type||'reels',brand:p.brand||state.settings.brands[0]?.id||'',stage:p.stage||'design',owner:p.owner||'personal',week:p.week||1,cycleRel:0,days:0,note:''}}
+  $('#taskTitle').textContent=o.copy?'New template task (copy)':id?'Edit template task':'New template task';
   $('#tWeek2').value=editing.week;
-  $('#tDelete').style.visibility=id?'visible':'hidden';
+  $('#tDelete').style.display=id?'':'none';$('#tDup').style.display=id?'':'none';
   fillCommon();
 }
-function openTask(id){
+function openTask(id,o={}){
   tplMode=false;setRows(false);
-  editing=id?{...state.tasks[id]}:{id:uid(),item:'',brand:state.settings.brands[0]?.id||'',stage:'design',owner:'personal',month:ui.month,week:ui.month===CUR_YM?CUR_W:1,cycle:ui.month,date:'',days:0,note:'',done:false};
-  stageSel=new Set([editing.stage,...siblings(editing).map(x=>x.stage)]);
-  $('#taskTitle').textContent=id?'Edit task':'New task';
+  if(o.copy)editing={...o.copy,id:uid(),done:false,_copy:true};
+  else if(id)editing={...state.tasks[id]};
+  else{const p={...presetFromFilters(),...(o.preset||{})};const m=p.month||ui.month;editing={id:uid(),item:'',_type:p.type||'reels',brand:p.brand||state.settings.brands[0]?.id||'',stage:p.stage||'design',owner:p.owner||'personal',month:m,week:p.week||(m===CUR_YM?CUR_W:1),cycle:p.cycle||m,date:'',days:0,note:'',done:false}}
+  stageSel=new Set([editing.stage,...(editing._copy?[]:siblings(editing)).map(x=>x.stage)]);
+  $('#taskTitle').textContent=o.copy?'New task (copy)':id?'Edit task':'New task';
   $('#tMonth').value=editing.month;fillWeekOptions();$('#tWeek').value=editing.week;$('#tCycle').value=editing.cycle||editing.month;$('#tDate').value=editing.date||'';$('#tTitle').value=editing.title||'';
-  $('#tDelete').style.visibility=id?'visible':'hidden';
+  $('#tDelete').style.display=id?'':'none';$('#tDup').style.display=id?'':'none';
   fillCommon();
 }
 function syncRadios(){
@@ -971,7 +1008,7 @@ function syncRadios(){
   $('#tDone').querySelectorAll('button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='1')===!!editing.done));
   $('#tCycleRel').querySelectorAll('button').forEach(b=>b.classList.toggle('on',Number(b.dataset.v)===tplRel(editing)));
 }
-function formState(){return JSON.stringify([['#tItem','#tTitle','#tBrand','#tStage','#tMonth','#tWeek','#tCycle','#tDate','#tWeek2','#tDays','#tNote'].map(x=>$(x).value),editing?editing.owner:'',editing?!!editing.done:false,editing?tplRel(editing):0,[...stageSel].sort()])}
+function formState(){return JSON.stringify([['#tType','#tNum','#tItem','#tTitle','#tBrand','#tStage','#tMonth','#tWeek','#tCycle','#tDate','#tWeek2','#tDays','#tNote'].map(x=>$(x).value),editing?editing.owner:'',editing?!!editing.done:false,editing?tplRel(editing):0,[...stageSel].sort()])}
 async function closeTask(){
   if(!$('#taskOv').classList.contains('show'))return;
   if(formState()!==formSnap){const r=await ask('Discard changes?','This task has changes that are not saved yet.',[{label:'Keep editing',value:'keep'},{label:'Discard',value:'discard',cls:'danger'}]);if(r!=='discard')return}
@@ -981,8 +1018,10 @@ $('#tOwner').querySelectorAll('button').forEach(b=>b.onclick=()=>{editing.owner=
 $('#tDone').querySelectorAll('button').forEach(b=>b.onclick=()=>{editing.done=b.dataset.v==='1';syncRadios()});
 $('#tCycleRel').querySelectorAll('button').forEach(b=>b.onclick=()=>{editing.cycleRel=Number(b.dataset.v);delete editing.cycleNext;syncRadios()});
 $('#tStage').addEventListener('change',()=>{refreshRows();dateToWeek()});
-$('#tBrand').addEventListener('change',()=>{if(!tplMode)renderStageToggles()});
+$('#tType').addEventListener('change',()=>syncItemFields(true));
 $('#tItem').addEventListener('input',()=>{if(!tplMode)renderStageToggles()});
+$('#tNum').addEventListener('input',()=>{if(!tplMode)renderStageToggles()});
+$('#tBrand').addEventListener('change',()=>{if(!tplMode)renderStageToggles()});
 $('#tMonth').addEventListener('change',fillWeekOptions);
 $('#tCancel').onclick=closeTask;
 function dateToWeek(){const ds=$('#tDate').value;if(!tplMode&&ds&&$('#tStage').value==='post'){const r=weekOfDate(new Date(ds+'T00:00:00'));$('#tMonth').value=r.ym;fillWeekOptions();$('#tWeek').value=r.w}}
@@ -1006,11 +1045,14 @@ async function saveAllBrands(t){
   writes.forEach(w=>persistTask(w,{noUndo:true}));
   toast(`${t.item} created once per brand (${brands.length})${t.days?', '+each+'d each':''}`);
 }
+function daysMissing(owner,stage){return owner==='personal'&&stage!=='post'&&!(Number($('#tDays').value)>0)}
 $('#tSave').onclick=async()=>{
   if(!canWrite)return;
-  const item=$('#tItem').value.trim();if(!item){toast('Give the task a name, e.g. Reels 1');return}
+  const item=buildItem($('#tType').value,$('#tNum').value,$('#tItem').value);if(!item){toast($('#tType').value==='other'?'Give the task a name':'Enter a number, e.g. 5 for Reels 5');return}
+  const st0=$('#tStage').value,own0=(st0==='shoot'||st0==='post')?'personal':editing.owner;
+  if(daysMissing(own0,st0)){toast('Est. days is required when you do it yourself (except Posting)');$('#tDays').focus();return}
   if(tplMode){
-    const t={...editing,item,brand:$('#tBrand').value,stage:$('#tStage').value,week:Number($('#tWeek2').value),days:Number($('#tDays').value)||0,note:$('#tNote').value.trim(),cycleRel:tplRel(editing)};delete t.cycleNext;
+    const t={...editing,item,brand:$('#tBrand').value,stage:$('#tStage').value,week:Number($('#tWeek2').value),days:Number($('#tDays').value)||0,note:$('#tNote').value.trim(),cycleRel:tplRel(editing)};delete t.cycleNext;delete t._type;
     if(t.stage==='shoot'||t.stage==='post')t.owner='personal';
     if(t.owner==='outsource')t.days=0;
     t.days=await otCheck({...t,month:'tpl'},tplTasks().map(x=>({...x,month:'tpl'})));
@@ -1025,7 +1067,7 @@ $('#tSave').onclick=async()=>{
   t.days=await otCheck(t,allTasks());
   formSnap=formState();$('#taskOv').classList.remove('show');
   if(t.brand==='all'){await saveAllBrands(t);return}
-  const sib=siblings(editing);
+  const sib=editing._copy?[]:siblings(editing);delete t._copy;delete t._type;
   const shared={item:t.item,brand:t.brand,title:t.title,date:t.date,cycle:t.cycle};
   const sharedChanged=Object.keys(shared).some(k=>(t[k]||'')!==(editing[k]||''));
   const ops=[{kind:'task',id:t.id,prev:clone(state.tasks[t.id])||null}],writes=[t],dels=[];
@@ -1062,6 +1104,12 @@ $('#tDelete').onclick=async()=>{
   const ids=r==='all'?[editing.id,...sib.map(x=>x.id)]:[editing.id];
   pushUndo('delete '+editing.item+(r==='all'?' (all stages)':''),ids.map(id=>({kind:'task',id,prev:clone(state.tasks[id])})));
   ids.forEach(id=>removeTask(id,{noUndo:true}));
+};
+$('#tDup').onclick=()=>{
+  const item=buildItem($('#tType').value,$('#tNum').value,$('#tItem').value);
+  if(tplMode){const c={...editing,item,brand:$('#tBrand').value,stage:$('#tStage').value,week:Number($('#tWeek2').value),days:Number($('#tDays').value)||0,note:$('#tNote').value.trim(),cycleRel:tplRel(editing)};formSnap=formState();openTplTask(null,{copy:c});return}
+  const c={...editing,item,title:$('#tTitle').value.trim(),brand:$('#tBrand').value,stage:$('#tStage').value,month:$('#tMonth').value||ui.month,week:Number($('#tWeek').value)||1,cycle:$('#tCycle').value||$('#tMonth').value||ui.month,date:$('#tDate').value||'',days:Number($('#tDays').value)||0,note:$('#tNote').value.trim()};
+  formSnap=formState();openTask(null,{copy:c});
 };
 $('#addBtn').onclick=()=>ui.view==='template'?openTplTask(null):openTask(null);
 document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target!==o)return;if(o.id==='taskOv')closeTask();else if(o.id==='askOv'){if(o._cancel)o._cancel()}else o.classList.remove('show')}));
