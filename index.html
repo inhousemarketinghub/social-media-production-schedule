@@ -427,6 +427,14 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
     <div class="mfoot"><div class="r"><button class="btn" id="mCancel">Cancel</button><button class="btn ink" id="mApply">Apply</button></div></div>
   </div>
 </div>
+<div class="ov" id="fieldsOv">
+  <div class="modal" style="max-width:380px">
+    <h3>Card fields</h3>
+    <p class="hint" style="margin:0 0 12px">Choose what each card shows. Saved on this device.</p>
+    <div class="wgrid" style="grid-template-columns:1fr"><div class="col" id="fieldsGrid"></div></div>
+    <div class="mfoot"><div class="r"><button class="btn" id="fCancel">Cancel</button><button class="btn ink" id="fApply">Apply</button></div></div>
+  </div>
+</div>
 <div class="ov" id="askOv">
   <div class="modal ask" style="max-width:440px">
     <h3 id="askTitle"></h3>
@@ -518,6 +526,13 @@ function dateCmp(a,b){return a.date&&b.date?a.date.localeCompare(b.date):0}
 function shiftDate(ds,n){const [y,m,d]=ds.split('-').map(Number);const last=new Date(y,m-1+n+1,0).getDate();const dt=new Date(y,m-1+n,Math.min(d,last));return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
 function availMonths(){return [...new Set(allTasks().map(t=>t.cycle||t.month))].filter(Boolean).sort()}
 function monthsLabel(){const n=ui.months.length;if(!n)return 'All';if(n===1)return monthLabel(ui.months[0]);if(n===2)return ui.months.map(monthLabel).join(' + ');return n+' months'}
+const FIELD_LABELS=[['mo','Month of the content batch (SEP, OCT)'],['title','Name'],['date','Posting date (on every stage)'],['days','Est. days'],['note','Note']];
+function openFields(){
+  $('#fieldsGrid').innerHTML=FIELD_LABELS.map(([k,l])=>`<label><input type="checkbox" data-f="${k}" ${ui.fields[k]?'checked':''}>${l}</label>`).join('');
+  $('#fieldsOv').classList.add('show');
+}
+$('#fCancel').onclick=()=>$('#fieldsOv').classList.remove('show');
+$('#fApply').onclick=()=>{$('#fieldsGrid').querySelectorAll('input').forEach(i=>ui.fields[i.dataset.f]=i.checked);saveUi();$('#fieldsOv').classList.remove('show');render()};
 function openMonths(){
   const avail=availMonths();const cy=CUR_YM.slice(0,4);const years=[...new Set([...avail.map(m=>m.slice(0,4)),cy])].sort();
   $('#monthsGrid').innerHTML=`<div class="wgrid" style="grid-template-columns:repeat(${years.length},1fr)">${years.map(y=>`<div class="col ${y===cy?'this':''}"><h4>${y}</h4>${Array.from({length:12},(_,i)=>{const ym=y+'-'+String(i+1).padStart(2,'0');const ok=avail.includes(ym);return `<label class="${ok?'':'off'}"><input type="checkbox" data-m="${ym}" ${ok?'':'disabled'} ${ui.months.includes(ym)?'checked':''}>${monthShort(ym)}</label>`}).join('')}</div>`).join('')}</div>`;
@@ -543,9 +558,10 @@ $('#themeBtn').onclick=()=>{const t=document.documentElement.getAttribute('data-
 let state={tasks:{},settings:JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),template:{tasks:[]}};
 const WEEKS_WEEK_DEFAULT=[{dm:0,w:1},{dm:0,w:2},{dm:0,w:3},{dm:0,w:4}];
 const WEEKS_MATRIX_DEFAULT=[{dm:-1,w:4},{dm:0,w:1},{dm:0,w:2},{dm:0,w:3},{dm:0,w:4},{dm:1,w:1},{dm:1,w:2}];
-let ui={view:'schedule',sub:'week',tplSub:'week',capAxis:'stage',owner:'all',brand:'all',type:'all',status:'all',months:[],month:CUR_YM,weeksWeek:WEEKS_WEEK_DEFAULT.slice(),weeksMatrix:WEEKS_MATRIX_DEFAULT.slice()};
-(function(){try{const r=localStorage.getItem('sm-ui');if(r){const o=JSON.parse(r);if(o.weeksWeek)ui.weeksWeek=o.weeksWeek;if(o.weeksMatrix)ui.weeksMatrix=o.weeksMatrix}}catch(e){}})();
-function saveUi(){try{localStorage.setItem('sm-ui',JSON.stringify({weeksWeek:ui.weeksWeek,weeksMatrix:ui.weeksMatrix}))}catch(e){}}
+const FIELDS_DEFAULT={mo:true,title:true,date:true,days:true,note:false};
+let ui={view:'schedule',sub:'week',tplSub:'week',capAxis:'stage',owner:'all',brand:'all',type:'all',status:'all',months:[],month:CUR_YM,weeksWeek:WEEKS_WEEK_DEFAULT.slice(),weeksMatrix:WEEKS_MATRIX_DEFAULT.slice(),tplWeeks:[1,2,3,4],fields:{...FIELDS_DEFAULT}};
+(function(){try{const r=localStorage.getItem('sm-ui');if(r){const o=JSON.parse(r);if(o.weeksWeek)ui.weeksWeek=o.weeksWeek;if(o.weeksMatrix)ui.weeksMatrix=o.weeksMatrix;if(o.tplWeeks)ui.tplWeeks=o.tplWeeks;if(o.fields)ui.fields={...FIELDS_DEFAULT,...o.fields}}}catch(e){}})();
+function saveUi(){try{localStorage.setItem('sm-ui',JSON.stringify({weeksWeek:ui.weeksWeek,weeksMatrix:ui.weeksMatrix,tplWeeks:ui.tplWeeks,fields:ui.fields}))}catch(e){}}
 let canWrite=true,mode='local';
 
 function loadLocal(){try{const r=localStorage.getItem(LS_KEY);if(r){const o=JSON.parse(r);if(o.tasks)state.tasks=o.tasks;if(o.settings)state.settings={...state.settings,...o.settings};if(o.template)state.template=o.template}}catch(e){}}
@@ -689,26 +705,30 @@ function cardHtml(t,o){
   const cls='tk '+itemType(t.item)+(outsourcedLook(t,o.tpl)?' out':'')+(t.done?' done':'');
   const tip=`${esc(t.item)}${t.title?' · '+esc(t.title):''} (${esc(b.name)}) · ${esc(st.name)} · ${t.owner==='outsource'?'Outsource':'Self'}${t.cycle?' · batch '+monthShort(t.cycle):''}${t.date?' · live '+dayLabel(t.date):''}${t.note?' · '+esc(t.note):''}`;
   const cb=o.check?`<input type="checkbox" data-done="${t.id}" ${t.done?'checked':''} ${canWrite?'':'disabled'} aria-label="Mark done">`:'';
-  const tags=(o.tpl?relTag(t):'')+(t.owner!=='outsource'&&t.days>0?`<span class="tg d">${t.days}d</span>`:'');
-  const mo=!o.tpl&&t.cycle?`<span class="tk-mo">${esc(monthShort(t.cycle))}</span>`:'';
-  const date=!o.tpl&&t.stage==='post'&&t.date?`<div class="tk-date">${fmtDMY(t.date)}</div>`:'';
-  return `<div class="${cls}" draggable="${o.drag&&canWrite?'true':'false'}" data-id="${t.id}" ${o.tpl?'data-tpl="1"':''} title="${tip}"><div class="tk-top">${cb}${logoHtml(b)}<span class="tk-ic">${t.done?ICON.check:ICON[st.id]}</span><span class="tk-name">${mo}${esc(t.item)}</span></div>${t.title?`<div class="tk-ttl">${esc(t.title)}</div>`:''}${date}${tags?`<div class="tk-tags">${tags}</div>`:''}</div>`;
+  const F=ui.fields;
+  const tags=(o.tpl&&F.mo?relTag(t):'')+(F.days&&t.owner!=='outsource'&&t.days>0?`<span class="tg d">${t.days}d</span>`:'');
+  const mo=!o.tpl&&F.mo&&t.cycle?`<span class="tk-mo">${esc(monthShort(t.cycle))}</span>`:'';
+  const date=!o.tpl&&F.date&&t.date?`<div class="tk-date">${fmtDMY(t.date)}</div>`:'';
+  const note=F.note&&t.note?`<div class="tk-ttl">${esc(t.note)}</div>`:'';
+  return `<div class="${cls}" draggable="${o.drag&&canWrite?'true':'false'}" data-id="${t.id}" ${o.tpl?'data-tpl="1"':''} title="${tip}"><div class="tk-top">${cb}${logoHtml(b)}<span class="tk-ic">${t.done?ICON.check:ICON[st.id]}</span><span class="tk-name">${mo}${esc(t.item)}</span></div>${F.title&&t.title?`<div class="tk-ttl">${esc(t.title)}</div>`:''}${date}${note}${tags?`<div class="tk-tags">${tags}</div>`:''}</div>`;
 }
+let dragStage=null;
 function bindTasks(){
   document.querySelectorAll('.tk[data-id]').forEach(el=>el.onclick=e=>{if(e.target.closest('input'))return;el.dataset.tpl?openTplTask(el.dataset.id):openTask(el.dataset.id)});
   document.querySelectorAll('[data-add-m]').forEach(b=>b.onclick=e=>{e.stopPropagation();const pre={week:Number(b.dataset.addW),stage:b.dataset.addS||''};if(b.dataset.addM==='tpl')openTplTask(null,{preset:pre});else openTask(null,{preset:{...pre,month:b.dataset.addM}})});
   document.querySelectorAll('[data-done]').forEach(cb=>cb.onchange=()=>persistTask({...state.tasks[cb.dataset.done],done:cb.checked},{label:(cb.checked?'tick ':'untick ')+state.tasks[cb.dataset.done].item}));
   document.querySelectorAll('.tk[draggable="true"]').forEach(c=>{
-    c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',JSON.stringify({id:c.dataset.id,tpl:!!c.dataset.tpl}));e.dataTransfer.effectAllowed='move';c.classList.add('dragging')});
-    c.addEventListener('dragend',()=>c.classList.remove('dragging'));
+    c.addEventListener('dragstart',e=>{const t=c.dataset.tpl?state.template.tasks.find(x=>x.id===c.dataset.id):state.tasks[c.dataset.id];dragStage=t?t.stage:null;e.dataTransfer.setData('text/plain',JSON.stringify({id:c.dataset.id,tpl:!!c.dataset.tpl}));e.dataTransfer.effectAllowed='move';c.classList.add('dragging')});
+    c.addEventListener('dragend',()=>{c.classList.remove('dragging');dragStage=null});
   });
   document.querySelectorAll('td.drop').forEach(td=>{
-    td.addEventListener('dragover',e=>{if(!canWrite)return;e.preventDefault();e.dataTransfer.dropEffect='move';td.classList.add('over')});
+    td.addEventListener('dragover',e=>{if(!canWrite||(dragStage&&td.dataset.s!==dragStage))return;e.preventDefault();e.dataTransfer.dropEffect='move';td.classList.add('over')});
     td.addEventListener('dragleave',()=>td.classList.remove('over'));
     td.addEventListener('drop',e=>{
       e.preventDefault();td.classList.remove('over');
       let p;try{p=JSON.parse(e.dataTransfer.getData('text/plain'))}catch(x){return}
       const w=Number(td.dataset.w),st=td.dataset.s;
+      const src=p.tpl?state.template.tasks.find(x=>x.id===p.id):state.tasks[p.id];if(src&&src.stage!==st){toast('Cards move between weeks only, not between stages');return}
       if(p.tpl){const t=state.template.tasks.find(x=>x.id===p.id);if(!t||(t.week===w&&t.stage===st))return;const prev=clone(state.template.tasks);t.week=w;t.stage=st;persistTemplate({prev,label:'move '+t.item});toast(`${t.item} moved to W${w} · ${STAGES[stageIdx(st)].short}`)}
       else{const t=state.tasks[p.id];if(!t||(t.month===td.dataset.m&&t.week===w&&t.stage===st))return;persistTask({...t,month:td.dataset.m,week:w,stage:st},{label:'move '+t.item});toast(`${t.item} moved to ${monthShort(td.dataset.m)} W${w} · ${STAGES[stageIdx(st)].short}`)}
     });
@@ -757,8 +777,8 @@ function renderSchedule(){
   const cap=capDays();
   const monthTasks=allTasks().filter(t=>t.month===ui.month);
   if(ui.sub!=='capacity'){
-    $('#navExtra').insertAdjacentHTML('beforeend',`<button class="btn sm" id="weeksBtn">Weeks: ${specsLabel()}</button>`);
-    $('#weeksBtn').onclick=openWeeks;
+    $('#navExtra').insertAdjacentHTML('beforeend',`<button class="btn sm" id="weeksBtn">Weeks: ${specsLabel()}</button><button class="btn sm" id="fieldsBtn" title="Choose what cards show">Fields</button>`);
+    $('#weeksBtn').onclick=openWeeks;$('#fieldsBtn').onclick=openFields;
   }
   if(ui.sub==='week'){
     $('#navHint').textContent='What gets done each week. Tick a task when it is finished. Use the Weeks button to show more or fewer weeks.';
@@ -777,7 +797,14 @@ function renderSchedule(){
 
 function toSpecs(sel){const out=[];sel.slice().sort((a,b)=>a.dm-b.dm||a.w-b.w).forEach(x=>{const m=addMonths(ui.month,x.dm),grp=x.dm<0?'last':x.dm>0?'next':'this';out.push({m,w:x.w,grp});if(x.w===4&&weeksIn(m)===5)out.push({m,w:5,grp})});return out}
 function specsLabel(){const sel=ui.sub==='week'?ui.weeksWeek:ui.weeksMatrix;if(!sel.length)return 'none';const same=a=>JSON.stringify(toSpecs(a).map(x=>x.dm+'|'+x.w));const n=sel.length;const allThis=sel.every(x=>x.dm===0);if(allThis&&n===4)return 'this month';return n+' selected'}
+let weeksForTpl=false;
+function openTplWeeks(){
+  weeksForTpl=true;$('#weeksOv').querySelector('.actions').style.display='none';
+  $('#weeksGrid').innerHTML=`<div class="wgrid" style="grid-template-columns:1fr"><div class="col this"><h4>Template weeks</h4>${[1,2,3,4].map(w=>`<label><input type="checkbox" data-dm="0" data-w="${w}" ${ui.tplWeeks.includes(w)?'checked':''}>W${w} <span class="hint">${WEEK_DAYS[w]}</span></label>`).join('')}</div></div>`;
+  $('#weeksOv').classList.add('show');
+}
 function openWeeks(){
+  weeksForTpl=false;$('#weeksOv').querySelector('.actions').style.display='';
   const sel=(ui.sub==='week'?ui.weeksWeek:ui.weeksMatrix);
   const has=(dm,w)=>sel.some(x=>x.dm===dm&&x.w===w);
   $('#weeksGrid').innerHTML=`<div class="wgrid">${[-1,0,1].map(dm=>`<div class="col ${dm===0?'this':''}"><h4>${dm<0?'Last month':dm>0?'Next month':'This month'} · ${monthLabel(addMonths(ui.month,dm))}</h4>${[1,2,3,4].map(w=>{const m=addMonths(ui.month,dm);const five=w===4&&weeksIn(m)===5;return `<label><input type="checkbox" data-dm="${dm}" data-w="${w}" ${has(dm,w)?'checked':''}>W${w}${five?' + W5':''} <span class="hint">${weekRange(m,w)}${five?' · '+weekRange(m,5):''}</span></label>`}).join('')}</div>`).join('')}</div>`;
@@ -789,14 +816,16 @@ $('#weeksOv').querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
   $('#weeksGrid').querySelectorAll('input').forEach(i=>{i.checked=want.some(x=>x.dm===Number(i.dataset.dm)&&x.w===Number(i.dataset.w))});
 });
 $('#wCancel').onclick=()=>$('#weeksOv').classList.remove('show');
-$('#wApply').onclick=()=>{const v=readWeeks();if(ui.sub==='week')ui.weeksWeek=v;else ui.weeksMatrix=v;saveUi();$('#weeksOv').classList.remove('show');render()};
+$('#wApply').onclick=()=>{const v=readWeeks();if(weeksForTpl)ui.tplWeeks=v.map(x=>x.w).sort();else if(ui.sub==='week')ui.weeksWeek=v;else ui.weeksMatrix=v;saveUi();$('#weeksOv').classList.remove('show');render()};
 
 /* ---------- template ---------- */
 function renderTemplate(){
   $('#navTitle').textContent='Monthly template';
-  $('#navExtra').innerHTML=subsegHtml('tplSeg',SUBS,ui.tplSub)+(ui.tplSub==='capacity'?axisToggleHtml():'')+`<button class="btn sm primary" id="applyBtn" ${canWrite?'':'disabled'}>Generate a month</button>`;
+  const tw=ui.tplWeeks.length===4?'all 4':ui.tplWeeks.length+' selected';
+  $('#navExtra').innerHTML=subsegHtml('tplSeg',SUBS,ui.tplSub)+(ui.tplSub==='capacity'?axisToggleHtml():`<button class="btn sm" id="tplWeeksBtn">Weeks: ${tw}</button><button class="btn sm" id="fieldsBtn" title="Choose what cards show">Fields</button>`)+`<button class="btn sm primary" id="applyBtn" ${canWrite?'':'disabled'}>Generate a month</button>`;
   $('#tplSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{ui.tplSub=b.dataset.k;render()});
   bindAxis();$('#applyBtn').onclick=openApply;
+  if($('#tplWeeksBtn'))$('#tplWeeksBtn').onclick=openTplWeeks;if($('#fieldsBtn'))$('#fieldsBtn').onclick=openFields;
   const all=tplTasks(),tasks=all.filter(visible),cap=capDays();
   if(!all.length){
     $('#navHint').textContent='The rule every month runs on.';
@@ -805,10 +834,10 @@ function renderTemplate(){
   }
   if(ui.tplSub==='week'){
     $('#navHint').textContent='The rule every month runs on: what the Specialist does in each week. Click a task to change the rule.';
-    $('#viewRoot').innerHTML=renderWeekCards([1,2,3,4].map(w=>({m:'tpl',w,grp:'this'})),tasks.map(t=>({...t,month:'tpl'})),all.map(t=>({...t,month:'tpl'})),cap,{real:false});
+    $('#viewRoot').innerHTML=ui.tplWeeks.length?renderWeekCards(ui.tplWeeks.map(w=>({m:'tpl',w,grp:'this'})),tasks.map(t=>({...t,month:'tpl'})),all.map(t=>({...t,month:'tpl'})),cap,{real:false}):emptyHtml('Pick at least one week.');
   }else if(ui.tplSub==='matrix'){
     $('#navHint').textContent='The rule as a grid: week by stage. Tasks shot or planned here for next month are posted in next month\'s W1 and W2.';
-    $('#viewRoot').innerHTML=renderMatrix([1,2,3,4].map(w=>({m:'tpl',w,grp:'this'})),tasks.map(t=>({...t,month:'tpl'})),{real:false});
+    $('#viewRoot').innerHTML=ui.tplWeeks.length?renderMatrix(ui.tplWeeks.map(w=>({m:'tpl',w,grp:'this'})),tasks.map(t=>({...t,month:'tpl'})),{real:false}):emptyHtml('Pick at least one week.');
   }else{
     $('#navHint').textContent='Where the Specialist\'s time goes in a standard month, stage by stage. Posting is counted, not timed.';
     $('#viewRoot').innerHTML=renderCapacity(tasks,cap,true);
@@ -885,7 +914,7 @@ function capCell(c,isPost,cap){
   return `<div class="cp ${cap!==undefined&&c.pd>cap?'over':''}"><b>${c.pd}d</b><small>${c.pn} self${c.on?' · '+c.on+' out':''}</small></div>`;
 }
 function renderCapacity(tasks,cap,isTpl){
-  const d=capData(tasks);const wks=isTpl?wks:Array.from({length:weeksIn(ui.month)},(_,i)=>i+1);const nW=wks.length;
+  const d=capData(tasks);const wks=isTpl?[1,2,3,4]:Array.from({length:weeksIn(ui.month)},(_,i)=>i+1);const nW=wks.length;
   const weekPd=wks.map(w=>STAGES.reduce((s,st)=>s+d[st.id][w].pd,0));
   const stagePd=STAGES.map(st=>wks.reduce((s,w)=>s+d[st.id][w].pd,0));
   const stageN=STAGES.map(st=>wks.reduce((s,w)=>s+d[st.id][w].n,0));
@@ -1024,7 +1053,8 @@ $('#tNum').addEventListener('input',()=>{if(!tplMode)renderStageToggles()});
 $('#tBrand').addEventListener('change',()=>{if(!tplMode)renderStageToggles()});
 $('#tMonth').addEventListener('change',fillWeekOptions);
 $('#tCancel').onclick=closeTask;
-function dateToWeek(){const ds=$('#tDate').value;if(!tplMode&&ds&&$('#tStage').value==='post'){const r=weekOfDate(new Date(ds+'T00:00:00'));$('#tMonth').value=r.ym;fillWeekOptions();$('#tWeek').value=r.w}}
+/* A posting date sets the batch month, and on a Posting task also the week. */
+function dateToWeek(){const ds=$('#tDate').value;if(tplMode||!ds)return;$('#tCycle').value=ds.slice(0,7);if($('#tStage').value==='post'){const r=weekOfDate(new Date(ds+'T00:00:00'));$('#tMonth').value=r.ym;fillWeekOptions();$('#tWeek').value=r.w}}
 $('#tDate').onchange=dateToWeek;
 /* More than the weekly capacity of self days means overtime. Ask before saving. */
 async function otCheck(t,pool){
@@ -1032,7 +1062,8 @@ async function otCheck(t,pool){
   const cap=capDays();const others=pool.filter(x=>x.id!==t.id&&x.month===t.month&&x.week===t.week&&x.owner==='personal'&&x.stage!=='post').reduce((a,x)=>a+(Number(x.days)||0),0);
   if(others+t.days<=cap)return t.days;
   const r=await ask('OMG! Are you willing to OT?😍',`This week already has ${others} self day(s). Adding ${t.days} makes ${others+t.days}, over the ${cap}-day capacity.`,[{label:"No...It's a prank...haha😅",value:'no'},{label:'Yes! I love my job🥲',value:'yes',cls:'ink'}]);
-  return r==='yes'?t.days:0;
+  if(r==='yes')return t.days;
+  $('#tDays').value=editing.days||'';toast('Est. days put back to '+(editing.days||0));$('#tDays').focus();return null;
 }
 function halfRound(n){return Math.round(n*2)/2}
 async function saveAllBrands(t){
@@ -1055,7 +1086,7 @@ $('#tSave').onclick=async()=>{
     const t={...editing,item,brand:$('#tBrand').value,stage:$('#tStage').value,week:Number($('#tWeek2').value),days:Number($('#tDays').value)||0,note:$('#tNote').value.trim(),cycleRel:tplRel(editing)};delete t.cycleNext;delete t._type;
     if(t.stage==='shoot'||t.stage==='post')t.owner='personal';
     if(t.owner==='outsource')t.days=0;
-    t.days=await otCheck({...t,month:'tpl'},tplTasks().map(x=>({...x,month:'tpl'})));
+    t.days=await otCheck({...t,month:'tpl'},tplTasks().map(x=>({...x,month:'tpl'})));if(t.days===null)return;
     const prev=clone(state.template.tasks);
     const i=state.template.tasks.findIndex(x=>x.id===t.id);if(i>=0)state.template.tasks[i]=t;else state.template.tasks.push(t);
     formSnap=formState();$('#taskOv').classList.remove('show');persistTemplate({prev,label:'edit template '+t.item});return;
@@ -1064,7 +1095,7 @@ $('#tSave').onclick=async()=>{
   const t={...editing,item,title:$('#tTitle').value.trim(),brand:$('#tBrand').value,stage:$('#tStage').value,month:$('#tMonth').value,week:Number($('#tWeek').value),cycle:$('#tCycle').value||$('#tMonth').value,date:$('#tDate').value||'',days:Number($('#tDays').value)||0,note:$('#tNote').value.trim()};
   if(t.stage==='shoot'||t.stage==='post')t.owner='personal';
   if(t.owner==='outsource')t.days=0;
-  t.days=await otCheck(t,allTasks());
+  t.days=await otCheck(t,allTasks());if(t.days===null)return;
   formSnap=formState();$('#taskOv').classList.remove('show');
   if(t.brand==='all'){await saveAllBrands(t);return}
   const sib=editing._copy?[]:siblings(editing);delete t._copy;delete t._type;
@@ -1082,6 +1113,12 @@ $('#tSave').onclick=async()=>{
       }
       if(st.id==='shoot'&&!stageSel.has('shoot')&&have.has('shoot')&&t.stage!=='shoot')sib.filter(x=>x.stage==='shoot').forEach(x=>{ops.push({kind:'task',id:x.id,prev:clone(x)});dels.push(x.id)});
     });
+    /* A posting date on any stage guarantees a Posting card in that date's week. */
+    if(t.date&&t.stage!=='post'){
+      const r=weekOfDate(new Date(t.date+'T00:00:00'));const ps=sib.find(x=>x.stage==='post');
+      if(!ps){const c={id:uid(),item:t.item,title:t.title,brand:t.brand,stage:'post',owner:'personal',month:r.ym,week:r.w,cycle:t.cycle,date:t.date,days:0,note:'',done:false};ops.push({kind:'task',id:c.id,prev:null});writes.push(c)}
+      else if(t.date!==(editing.date||'')||ps.month!==r.ym||ps.week!==r.w){const w=writes.find(x=>x.id===ps.id);if(w){w.month=r.ym;w.week=r.w}else{ops.push({kind:'task',id:ps.id,prev:clone(ps)});writes.push({...ps,...shared,month:r.ym,week:r.w})}}
+    }
   }
   pushUndo((state.tasks[t.id]?'edit ':'add ')+t.item,ops);
   writes.forEach(w=>persistTask(w,{noUndo:true}));
