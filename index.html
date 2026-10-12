@@ -376,7 +376,7 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
     <div class="f" id="rowStages"><label>Shooting</label><div><div id="tStages"></div><div class="hint" style="margin-top:5px">Some Posts need photos or video. Shooting goes straight into Designing, with no Editing.</div></div></div>
     <div class="f" id="rowOwner"><label>Done by</label><div class="radio" id="tOwner"><button data-v="personal">Self</button><button data-v="outsource">Outsource</button></div></div>
     <div class="f" id="rowWeek"><label>Week</label><div class="two"><input type="month" id="tMonth"><select id="tWeek"></select></div></div>
-    <div class="f" id="rowCycle"><label>Posting cycle</label><input type="month" id="tCycle" title="Which month this content is posted in."></div>
+    <div class="f" id="rowCycle"><label>Posting cycle</label><input type="month" id="tCycle" title="Which month's content batch this belongs to. Last month's Post 3/4 posted in early this month still belong to last month."></div>
     <div class="f" id="rowDate"><label>Posting date</label><input type="date" id="tDate" title="The day this content goes live. Shared by every stage of this content. On a Posting task it also sets the week."></div>
     <div class="f" id="rowTplWeek"><label>Week</label><select id="tWeek2"><option value="1">W1 (1st week)</option><option value="2">W2 (2nd week)</option><option value="3">W3 (3rd week)</option><option value="4">W4 (4th week)</option></select></div>
     <div class="f" id="rowCycleRel"><label>Batch</label><div><div class="radio" id="tCycleRel"><button data-v="-1">Last month</button><button data-v="0">This month</button><button data-v="1">Next month</button></div><div class="hint" style="margin-top:5px">Which month's content this task belongs to. Finishing last month's Post 3/4 in W1 to W2 = Last month. Planning in W4 for next month = Next month.</div></div></div>
@@ -1053,8 +1053,8 @@ $('#tNum').addEventListener('input',()=>{if(!tplMode)renderStageToggles()});
 $('#tBrand').addEventListener('change',()=>{if(!tplMode)renderStageToggles()});
 $('#tMonth').addEventListener('change',fillWeekOptions);
 $('#tCancel').onclick=closeTask;
-/* A posting date sets the batch month, and on a Posting task also the week. */
-function dateToWeek(){const ds=$('#tDate').value;if(tplMode||!ds)return;$('#tCycle').value=ds.slice(0,7);if($('#tStage').value==='post'){const r=weekOfDate(new Date(ds+'T00:00:00'));$('#tMonth').value=r.ym;fillWeekOptions();$('#tWeek').value=r.w}}
+/* A posting date never changes the batch month (Posting cycle). On a Posting task it sets the week. */
+function dateToWeek(){const ds=$('#tDate').value;if(tplMode||!ds)return;if($('#tStage').value==='post'){const r=weekOfDate(new Date(ds+'T00:00:00'));$('#tMonth').value=r.ym;fillWeekOptions();$('#tWeek').value=r.w}}
 $('#tDate').onchange=dateToWeek;
 /* More than the weekly capacity of self days means overtime. Ask before saving. */
 async function otCheck(t,pool){
