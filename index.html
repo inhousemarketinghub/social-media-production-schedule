@@ -1105,6 +1105,13 @@ async function saveAllBrands(t){
   toast(`${t.item} created once per brand (${brands.length})${t.days?', '+each+'d each':''}`);
 }
 function daysMissing(owner,stage){return owner==='personal'&&stage!=='post'&&!(Number($('#tDays').value)>0)}
+/* One content = one number per brand and batch, and at most one task per stage. A second "Reels 3" for the same brand and batch is a clash. */
+function stageClash(t,tpl){
+  if(!t.brand||t.brand==='all')return null;
+  if(tpl)return (state.template.tasks||[]).find(x=>x.id!==t.id&&x.brand===t.brand&&x.item===t.item&&tplRel(x)===tplRel(t)&&x.stage===t.stage)||null;
+  return allTasks().find(x=>x.id!==t.id&&x.brand===t.brand&&x.item===t.item&&(x.cycle||x.month)===t.cycle&&x.stage===t.stage)||null;
+}
+function clashMsg(t,x,tpl){const st=STAGES[stageIdx(t.stage)].short;return `${t.item} for ${brandOf(t.brand).name}${tpl?'':' ('+monthShort(t.cycle)+' batch)'} already has a ${st} task${x.title?' ("'+x.title+'")':''}. Use another number.`}
 $('#tSave').onclick=async()=>{
   if(!canWrite)return;
   const item=buildItem($('#tType').value,$('#tNum').value,$('#tItem').value);if(!item){toast($('#tType').value==='other'?'Give the task a name':'Enter a number, e.g. 5 for Reels 5');return}
@@ -1114,6 +1121,7 @@ $('#tSave').onclick=async()=>{
     const t={...editing,item,brand:$('#tBrand').value,stage:$('#tStage').value,week:Number($('#tWeek2').value),days:Number($('#tDays').value)||0,note:$('#tNote').value.trim(),cycleRel:tplRel(editing)};delete t.cycleNext;delete t._type;
     if(t.stage==='shoot'||t.stage==='post')t.owner='personal';
     if(t.owner==='outsource')t.days=0;
+    const cx=stageClash(t,true);if(cx){toast(clashMsg(t,cx,true),4000);$('#tNum').focus();return}
     t.days=await otCheck({...t,month:'tpl'},tplTasks().map(x=>({...x,month:'tpl'})));if(t.days===null)return;
     const prev=clone(state.template.tasks);
     const i=state.template.tasks.findIndex(x=>x.id===t.id);if(i>=0)state.template.tasks[i]=t;else state.template.tasks.push(t);
@@ -1123,6 +1131,8 @@ $('#tSave').onclick=async()=>{
   const t={...editing,item,title:$('#tTitle').value.trim(),brand:$('#tBrand').value,stage:$('#tStage').value,month:$('#tMonth').value,week:Number($('#tWeek').value),cycle:$('#tCycle').value||$('#tMonth').value,date:$('#tDate').value||'',days:Number($('#tDays').value)||0,note:$('#tNote').value.trim()};
   if(t.stage==='shoot'||t.stage==='post')t.owner='personal';
   if(t.owner==='outsource')t.days=0;
+  if(t.brand==='all'){const bad=state.settings.brands.map(b=>({b,x:stageClash({...t,brand:b.id},false)})).find(o=>o.x);if(bad){toast(clashMsg({...t,brand:bad.b.id},bad.x,false),4000);$('#tNum').focus();return}}
+  else{const cx=stageClash(t,false);if(cx){toast(clashMsg(t,cx,false),4000);$('#tNum').focus();return}}
   t.days=await otCheck(t,allTasks());if(t.days===null)return;
   formSnap=formState();$('#taskOv').classList.remove('show');
   if(t.brand==='all'){await saveAllBrands(t);return}
