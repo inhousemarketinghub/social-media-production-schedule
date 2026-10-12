@@ -273,6 +273,15 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
 .sw input:checked+.track::after{transform:translateX(18px)}
 .sw input:focus-visible+.track{outline:2px solid var(--today-line);outline-offset:2px}
 .sw .lbl{font-size:13px;font-weight:600}
+.tl{display:flex;flex-direction:column;gap:4px}
+.tl-row{display:grid;grid-template-columns:80px 1fr auto;gap:8px;align-items:center;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);font-size:12.5px;text-align:left;width:100%}
+.tl-row.cur{border-color:var(--ink);background:var(--card);cursor:default}
+.tl-row:not(.cur):hover{border-color:var(--line2);background:var(--card)}
+.tl-st{display:inline-flex;align-items:center;gap:5px;font-weight:700}
+.tl-st svg{width:12px;height:12px;flex:none}
+.tl-wk b{font-weight:700}
+.tl-meta{color:var(--muted);font-size:11.5px;white-space:nowrap;text-align:right}
+.tk.kin{box-shadow:0 0 0 3px var(--today-line);transform:translateY(-1px)}
 :root[data-theme="dark"] .sw .track{background:#3A524F}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sw .track{background:#3A524F}}
 .ask p{margin:0 0 4px;font-size:14px;color:var(--text)}
@@ -373,6 +382,7 @@ table.cap{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
     <div class="f" id="rowTitle"><label>Name</label><input id="tTitle" placeholder="e.g. Sofa fabric guide (applies to every stage of this content)"></div>
     <div class="f"><label>Brand</label><select id="tBrand"></select></div>
     <div class="f"><label>Stage</label><select id="tStage"></select></div>
+    <div class="f" id="rowTimeline"><label>Timeline</label><div><div class="tl" id="tTimeline"></div><div class="hint" style="margin-top:5px">Every stage of this content in order. Click one to open it.</div></div></div>
     <div class="f" id="rowStages"><label>Shooting</label><div><div id="tStages"></div><div class="hint" style="margin-top:5px">Some Posts need photos or video. Shooting goes straight into Designing, with no Editing.</div></div></div>
     <div class="f" id="rowOwner"><label>Done by</label><div class="radio" id="tOwner"><button data-v="personal">Self</button><button data-v="outsource">Outsource</button></div></div>
     <div class="f" id="rowWeek"><label>Week</label><div class="two"><input type="month" id="tMonth"><select id="tWeek"></select></div></div>
@@ -715,6 +725,10 @@ function cardHtml(t,o){
 let dragStage=null;
 function bindTasks(){
   document.querySelectorAll('.tk[data-id]').forEach(el=>el.onclick=e=>{if(e.target.closest('input'))return;el.dataset.tpl?openTplTask(el.dataset.id):openTask(el.dataset.id)});
+  document.querySelectorAll('.tk[data-id]').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{const tpl=!!el.dataset.tpl;const t=tpl?state.template.tasks.find(x=>x.id===el.dataset.id):state.tasks[el.dataset.id];if(!t)return;const ids=new Set([t.id,...(tpl?tplSiblings(t):siblings(t)).map(x=>x.id)]);document.querySelectorAll('.tk[data-id]').forEach(x=>x.classList.toggle('kin',ids.has(x.dataset.id)))});
+    el.addEventListener('mouseleave',()=>document.querySelectorAll('.tk.kin').forEach(x=>x.classList.remove('kin')));
+  });
   document.querySelectorAll('[data-add-m]').forEach(b=>b.onclick=e=>{e.stopPropagation();const pre={week:Number(b.dataset.addW),stage:b.dataset.addS||''};if(b.dataset.addM==='tpl')openTplTask(null,{preset:pre});else openTask(null,{preset:{...pre,month:b.dataset.addM}})});
   document.querySelectorAll('[data-done]').forEach(cb=>cb.onchange=()=>persistTask({...state.tasks[cb.dataset.done],done:cb.checked},{label:(cb.checked?'tick ':'untick ')+state.tasks[cb.dataset.done].item}));
   document.querySelectorAll('.tk[draggable="true"]').forEach(c=>{
@@ -1017,7 +1031,7 @@ function openTplTask(id,o={}){
   else if(ex)editing={...ex};
   else{const p={...presetFromFilters(),...(o.preset||{})};editing={id:uid(),item:'',_type:p.type||'reels',brand:p.brand||state.settings.brands[0]?.id||'',stage:p.stage||'design',owner:p.owner||'personal',week:p.week||1,cycleRel:0,days:0,note:''}}
   $('#taskTitle').textContent=o.copy?'New template task (copy)':id?'Edit template task':'New template task';
-  $('#tWeek2').value=editing.week;
+  $('#tWeek2').value=editing.week;renderTimeline(id&&!o.copy?id:null);
   $('#tDelete').style.display=id?'':'none';$('#tDup').style.display=id?'':'none';
   fillCommon();
 }
@@ -1027,10 +1041,24 @@ function openTask(id,o={}){
   else if(id)editing={...state.tasks[id]};
   else{const p={...presetFromFilters(),...(o.preset||{})};const m=p.month||ui.month;editing={id:uid(),item:'',_type:p.type||'reels',brand:p.brand||state.settings.brands[0]?.id||'',stage:p.stage||'design',owner:p.owner||'personal',month:m,week:p.week||(m===CUR_YM?CUR_W:1),cycle:p.cycle||m,date:'',days:0,note:'',done:false}}
   stageSel=new Set([editing.stage,...(editing._copy?[]:siblings(editing)).map(x=>x.stage)]);
-  $('#taskTitle').textContent=o.copy?'New task (copy)':id?'Edit task':'New task';
+  $('#taskTitle').textContent=o.copy?'New task (copy)':id?'Edit task':'New task';renderTimeline(id&&!o.copy?id:null);
   $('#tMonth').value=editing.month;fillWeekOptions();$('#tWeek').value=editing.week;$('#tCycle').value=editing.cycle||editing.month;$('#tDate').value=editing.date||'';$('#tTitle').value=editing.title||'';
   $('#tDelete').style.display=id?'':'none';$('#tDup').style.display=id?'':'none';
   fillCommon();
+}
+/* The whole production run of one content, in time order. */
+function renderTimeline(id){
+  const row=$('#rowTimeline');
+  const list=tplMode?(id?[editing,...tplSiblings(editing)]:[]):(id&&!editing._copy?[editing,...siblings(editing)]:[]);
+  if(!list.length){row.style.display='none';return}
+  row.style.display='';
+  const key=t=>tplMode?[t.week,stageIdx(t.stage)]:[t.month,t.week,stageIdx(t.stage)];
+  list.sort((a,b)=>{const ka=key(a),kb=key(b);for(let i=0;i<ka.length;i++){if(ka[i]<kb[i])return -1;if(ka[i]>kb[i])return 1}return 0});
+  $('#tTimeline').innerHTML=list.map(t=>{const st=STAGES[stageIdx(t.stage)]||STAGES[0];const cur=t.id===editing.id;
+    const wk=tplMode?`<b>W${t.week}</b> · ${WEEK_DAYS[t.week]||''}`:`<b>${monthShort(t.month)} W${t.week}</b> · ${weekRange(t.month,t.week)}`;
+    const meta=[(t.stage==='shoot'||t.stage==='post')?'':(t.owner==='outsource'?'Outsource':'Self'),t.owner!=='outsource'&&t.days>0?t.days+'d':'',!tplMode&&t.stage==='post'&&t.date?fmtDMY(t.date):'',t.done?'done':''].filter(Boolean).join(' · ');
+    return `<button type="button" class="tl-row ${cur?'cur':''}" data-tl="${t.id}" ${cur?'disabled':''}><span class="tl-st">${ICON[st.id]}${esc(st.short)}</span><span class="tl-wk">${wk}</span><span class="tl-meta">${esc(meta)}</span></button>`}).join('');
+  $('#tTimeline').querySelectorAll('button[data-tl]:not([disabled])').forEach(b=>b.onclick=async()=>{const go=b.dataset.tl;const wasTpl=tplMode;await closeTask();if($('#taskOv').classList.contains('show'))return;wasTpl?openTplTask(go):openTask(go)});
 }
 function syncRadios(){
   $('#tOwner').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===editing.owner));
