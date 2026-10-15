@@ -118,7 +118,8 @@ h1{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:-0.01e
 
 /* ---------- task cards ---------- */
 .tk{--fill:var(--card);--line:var(--line2);--dash:var(--muted);position:relative;display:flex;flex-direction:column;gap:3px;padding:7px 9px;border-radius:10px;border:1.5px solid var(--line);background:var(--fill);color:var(--text);width:100%;min-width:0;text-align:left;font-size:12.5px;line-height:1.25;cursor:pointer;transition:transform .1s,box-shadow .1s;margin-bottom:6px}
-.mx .tk{margin-bottom:0;cursor:grab}
+.mx .tk{margin-bottom:0}
+.tk[draggable="true"]{cursor:grab}
 .tk:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
 .tk.general{--fill:#C6F0C8;--line:#98DD9D;--dash:#1F9A45;color:#04322F}
 .tk.reels{--fill:#B3EBF2;--line:#86D4E0;--dash:#0B8FAB;color:#04322F}
@@ -167,6 +168,7 @@ h1{font-family:var(--serif);font-size:24px;font-weight:700;letter-spacing:-0.01e
 .wk-card.other{background:var(--card2)}
 .wk-card{position:relative}
 .wk-card.now{border-color:var(--today-line);box-shadow:0 0 0 3px var(--today)}
+.wk-card.over{background:var(--sun-soft);box-shadow:inset 0 0 0 2px var(--today-line)}
 .wk-card .nowtag{position:absolute;top:-10px;right:14px;background:var(--today-line);color:#3A2D00;font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px}
 .wk-card h3{margin:0;font-family:var(--serif);font-size:22px;font-weight:700;display:flex;align-items:baseline;gap:8px}
 .wk-card h3 small{font-family:var(--sans);font-size:12px;color:var(--muted);font-weight:600}
@@ -735,14 +737,15 @@ function bindTasks(){
     c.addEventListener('dragstart',e=>{const t=c.dataset.tpl?state.template.tasks.find(x=>x.id===c.dataset.id):state.tasks[c.dataset.id];dragStage=t?t.stage:null;e.dataTransfer.setData('text/plain',JSON.stringify({id:c.dataset.id,tpl:!!c.dataset.tpl}));e.dataTransfer.effectAllowed='move';c.classList.add('dragging')});
     c.addEventListener('dragend',()=>{c.classList.remove('dragging');dragStage=null});
   });
-  document.querySelectorAll('td.drop').forEach(td=>{
-    td.addEventListener('dragover',e=>{if(!canWrite||(dragStage&&td.dataset.s!==dragStage))return;e.preventDefault();e.dataTransfer.dropEffect='move';td.classList.add('over')});
+  document.querySelectorAll('.drop').forEach(td=>{
+    td.addEventListener('dragover',e=>{if(!canWrite||(dragStage&&td.dataset.s&&td.dataset.s!==dragStage))return;e.preventDefault();e.dataTransfer.dropEffect='move';td.classList.add('over')});
     td.addEventListener('dragleave',()=>td.classList.remove('over'));
     td.addEventListener('drop',e=>{
       e.preventDefault();td.classList.remove('over');
       let p;try{p=JSON.parse(e.dataTransfer.getData('text/plain'))}catch(x){return}
-      const w=Number(td.dataset.w),st=td.dataset.s;
-      const src=p.tpl?state.template.tasks.find(x=>x.id===p.id):state.tasks[p.id];if(src&&src.stage!==st){toast('Cards move between weeks only, not between stages');return}
+      const src=p.tpl?state.template.tasks.find(x=>x.id===p.id):state.tasks[p.id];if(!src)return;
+      const w=Number(td.dataset.w),st=td.dataset.s||src.stage;
+      if(src.stage!==st){toast('Cards move between weeks only, not between stages');return}
       if(p.tpl){const t=state.template.tasks.find(x=>x.id===p.id);if(!t||(t.week===w&&t.stage===st))return;const prev=clone(state.template.tasks);t.week=w;t.stage=st;persistTemplate({prev,label:'move '+t.item});toast(`${t.item} moved to W${w} · ${STAGES[stageIdx(st)].short}`)}
       else{const t=state.tasks[p.id];if(!t||(t.month===td.dataset.m&&t.week===w&&t.stage===st))return;persistTask({...t,month:td.dataset.m,week:w,stage:st},{label:'move '+t.item});toast(`${t.item} moved to ${monthShort(td.dataset.m)} W${w} · ${STAGES[stageIdx(st)].short}`)}
     });
@@ -876,13 +879,13 @@ function renderWeekCards(specs,pool,allPool,cap,o){
     const pct=Math.min(100,used/cap*100);const cls=used>cap?'over':(used>=cap*0.9?'warn':'');
     const isNow=o.real&&sp.m===CUR_YM&&w===CUR_W;
     const doneN=list.filter(t=>t.done).length;
-    h+=`<div class="card wk-card ${isNow?'now':''} ${sp.grp!=='this'?'other':''}">${canWrite?`<button class="addc" data-add-m="${sp.m}" data-add-w="${w}" title="Add a task to this week">+</button>`:''}${isNow?'<span class="nowtag">This week</span>':''}<h3>${o.real&&sp.grp!=='this'?`<span class="mo">${monthShort(sp.m)}</span>`:''}W${w}<small>${o.real?weekRange(sp.m,w):WEEK_DAYS[w]}</small></h3><div class="bar"><i class="${cls}" style="width:${pct}%"></i></div><div class="cap"><b>${used}</b> / ${cap} self days${o.real&&list.length?` · ${doneN}/${list.length} done`:''}</div>`;
+    h+=`<div class="card wk-card drop ${isNow?'now':''} ${sp.grp!=='this'?'other':''}" data-m="${sp.m}" data-w="${w}">${canWrite?`<button class="addc" data-add-m="${sp.m}" data-add-w="${w}" title="Add a task to this week">+</button>`:''}${isNow?'<span class="nowtag">This week</span>':''}<h3>${o.real&&sp.grp!=='this'?`<span class="mo">${monthShort(sp.m)}</span>`:''}W${w}<small>${o.real?weekRange(sp.m,w):WEEK_DAYS[w]}</small></h3><div class="bar"><i class="${cls}" style="width:${pct}%"></i></div><div class="cap"><b>${used}</b> / ${cap} self days${o.real&&list.length?` · ${doneN}/${list.length} done`:''}</div>`;
     let any=false;
     STAGES.forEach(st=>{
       const l=list.filter(t=>t.stage===st.id).sort((a,b)=>((a.done|0)-(b.done|0))||dateCmp(a,b)||itemSort(a.item,b.item)||a.brand.localeCompare(b.brand));
       if(!l.length)return;any=true;
       const d=l.filter(t=>t.owner==='personal'&&st.id!=='post').reduce((s,t)=>s+(Number(t.days)||0),0);
-      h+=`<div class="st"><h5>${ICON[st.id]}${esc(st.short)}<span class="dd">${d>0?d+'d':st.id==='post'?l.length+' to post':''}</span></h5>${l.map(t=>cardHtml(t,{tpl:!o.real,check:o.real})).join('')}</div>`;
+      h+=`<div class="st"><h5>${ICON[st.id]}${esc(st.short)}<span class="dd">${d>0?d+'d':st.id==='post'?l.length+' to post':''}</span></h5>${l.map(t=>cardHtml(t,{tpl:!o.real,check:o.real,drag:true})).join('')}</div>`;
     });
     if(!any)h+='<div class="none">Nothing this week</div>';
     h+='</div>';
